@@ -3,10 +3,13 @@ import { useParams } from "react-router-dom";
 import type { Task } from "../types/task";
 import Navbar from "../components/Navbar";
 
+type Language = "python" | "javascript" | "cpp" | "java";
+
 export default function TaskPage() {
     const { id } = useParams();
     const [code, setCode] = useState("");
     const [task, setTask] = useState<Task | null>(null);
+    const [language, setLanguage] = useState<Language>("python");
 
     useEffect(() => {
         async function loadTask() {
@@ -39,6 +42,7 @@ export default function TaskPage() {
                 body: JSON.stringify({
                     task_id: taskId,
                     code: code,
+                    language: language
                 }),
             }
         );
@@ -73,6 +77,18 @@ export default function TaskPage() {
 
                 <section className="task-editor">
                     <div className="task-editor-actions">
+                        <select
+                        value={language}
+                        onChange={(event) =>
+                            setLanguage(event.target.value as Language)
+                        }
+                        >
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                        </select>
+
                         <button
                             className="task-submit"
                             onClick={handleSubmit}
