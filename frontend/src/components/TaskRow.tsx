@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { Task } from "../types/task";
 
 type TaskRowProps = {
@@ -6,14 +7,16 @@ type TaskRowProps = {
 
 export default function TaskRow({ task }: TaskRowProps) {
   return (
-    <div className="task-row">
-      <span className="task-title">{task.title}</span>
+    <Link to={`/tasks/${task.id}`}>
+      <div className="task-row">
+        <span className="task-title">{task.title}</span>
 
-      <span className="task-difficulty">
-        {"⭐️".repeat(task.difficulty)}
-      </span>
+        <span className="task-difficulty">
+          {"⭐️".repeat(task.difficulty)}
+        </span>
 
-      <span className="task-solved">{task.solved ? "✓" : ""}</span>
-    </div>
+        <span className="task-solved">{task.solved ? "✓" : ""}</span>
+      </div>
+    </Link>
   );
 }
