@@ -24,7 +24,7 @@ export default function TaskPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const statusLabels: Record<SubmissionStatus, string> = {
-        accepted: "Принято",
+        accepted: "Успешно",
         wrong_answer: "Неверный ответ",
         runtime_error: "Ошибка выполнения",
         time_limit_exceeded: "Превышено время",
