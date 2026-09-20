@@ -10,15 +10,15 @@ type TaskRowProps = {
 };
 
 export default function ProblemRow({ task }: TaskRowProps) {
-    return (
-        <div key={task.id}>
-            <span>{task.title}</span>
+  return (
+    <div className="problem-row">
+      <span className="problem-title">{task.title}</span>
 
-            <span>
-            {"⭐️".repeat(task.difficulty)}
-            </span>
+      <span className="problem-difficulty">
+        {"⭐️".repeat(task.difficulty)}
+      </span>
 
-            {task.solved && <span>✓</span>}
-        </div>
-    )
+      <span className="problem-solved">{task.solved ? "✓" : ""}</span>
+    </div>
+  );
 }
