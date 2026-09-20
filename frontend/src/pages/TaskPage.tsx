@@ -35,29 +35,31 @@ export default function TaskPage() {
         setIsSubmitting(true);
         setSubmissionStatus(null);
 
-        const response = await fetch(
-            "http://127.0.0.1:8000/api/submissions",
-            {
-                method: "POST",
+        try {
+            const response = await fetch(
+                "http://127.0.0.1:8000/api/submissions",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
 
-                body: JSON.stringify({
-                    task_id: taskId,
-                    code: code,
-                    language: language
-                }),
-            }
-        );
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        code: code,
+                        language: language
+                    }),
+                }
+            );
 
-        const data = await response.json();
+            const data = await response.json();
 
-        setSubmissionStatus(data.status);
-        setIsSubmitting(false);
-
-        console.log(data);
+            setSubmissionStatus(data.status);
+            console.log(data);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     if (!task) {
@@ -100,10 +102,17 @@ export default function TaskPage() {
                         <button
                             className="task-submit"
                             onClick={handleSubmit}
+                            disabled={isSubmitting}
                         >
                             {isSubmitting ? "Проверка..." : "Отправить"}
                         </button>
                     </div>
+
+                    {submissionStatus && (
+                        <div className="submission-status">
+                            {submissionStatus}
+                        </div>
+                    )}
 
                     <textarea
                         className="task-code-editor"
