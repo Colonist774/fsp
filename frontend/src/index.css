@@ -59,8 +59,8 @@ nav {
   height: 64px;
   display: flex;
   align-items: center;
-  gap: 28px;
-  padding: 0 max(24px, calc((100vw - 1120px) / 2));
+  gap: 24px;
+  padding: 0 18px;
   border-bottom: 1px solid var(--border);
   background: #0d1014;
   position: sticky;
@@ -69,7 +69,10 @@ nav {
 }
 
 nav strong {
-  margin-right: 8px;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-right: 22px;
+  padding-left: 2px;
   color: #f0f3f6;
   font-size: 19px;
   font-weight: 700;
@@ -512,12 +515,13 @@ nav a[aria-current="page"]::after {
 
 @media (max-width: 700px) {
   nav {
-    gap: 16px;
-    padding: 0 14px;
+    gap: 12px;
+    padding: 0 10px;
   }
 
   nav strong {
-    margin-right: 2px;
+    margin-right: 10px;
+    padding-left: 2px;
   }
 
   nav a {
