@@ -84,6 +84,7 @@ def _run_container(
         "docker",
         "run",
         "--rm",
+        "-i",
         "--pull=never",
         "--name",
         container_name,
