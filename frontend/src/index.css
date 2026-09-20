@@ -225,56 +225,64 @@ nav a[aria-current="page"]::after {
 
 
 
-.contests-layout {
+.page.contests-layout {
+  width: 100%;
+  min-height: calc(100vh - 68px);
+  margin: 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
-  align-items: start;
-  gap: 28px;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
 }
 
 .contest-sidebar {
   position: sticky;
-  top: 96px;
-  display: grid;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+  top: 68px;
+  height: calc(100vh - 68px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 44px 16px 24px;
+  border-right: 1px solid var(--border);
+  background: rgba(13, 17, 23, 0.72);
 }
 
 .contest-sidebar button {
   width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 9px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-secondary);
   text-align: left;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 550;
   cursor: pointer;
   transition:
     color 150ms ease,
-    background 150ms ease,
-    border-color 150ms ease;
+    background 150ms ease;
 }
 
 .contest-sidebar button:hover {
   color: var(--text);
-  background: var(--surface-hover);
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .contest-sidebar button.is-active {
-  color: #dce5ff;
-  background: var(--accent-soft);
-  border-color: rgba(111, 148, 255, 0.22);
+  color: var(--text);
+  background: var(--surface-hover);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .contest-content {
   min-width: 0;
+  padding: 52px 36px 80px;
+}
+
+.contest-content > .problem-list {
+  width: min(100%, 1180px);
 }
 
 /* Contests */
@@ -375,19 +383,36 @@ nav a[aria-current="page"]::after {
 
 
 @media (max-width: 760px) {
-  .contests-layout {
+  .page.contests-layout {
     grid-template-columns: 1fr;
-    gap: 18px;
+    min-height: 0;
   }
 
   .contest-sidebar {
     position: static;
-    grid-template-columns: repeat(4, minmax(max-content, 1fr));
+    height: auto;
+    flex-direction: row;
+    gap: 6px;
+    padding: 12px 14px;
     overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
   }
 
   .contest-sidebar button {
+    width: auto;
+    min-width: max-content;
+    min-height: 40px;
+    padding: 0 14px;
     text-align: center;
     white-space: nowrap;
+  }
+
+  .contest-sidebar button.is-active {
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  .contest-content {
+    padding: 28px 14px 60px;
   }
 }
