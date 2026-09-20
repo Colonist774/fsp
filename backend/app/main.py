@@ -66,6 +66,8 @@ def create_submission(
     submission = Submission(
         task_id=submission_data.task_id,
         code=submission_data.code,
+        language=submission_data.language,
+        status="pending",
     )
 
     db.add(submission)
