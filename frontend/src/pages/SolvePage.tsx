@@ -31,7 +31,7 @@ export default function SolvePage() {
             <main className="page solve-page">
                 <h1>Решать</h1>
 
-                <div className="problem-list">
+                <div className="task-list">
                     {tasks.map((task) => (
                     <ProblemRow key={task.id} task={task} />
                     ))}
