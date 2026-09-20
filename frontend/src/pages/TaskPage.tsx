@@ -12,6 +12,30 @@ export default function TaskPage() {
     if (!task) {
         return <h1>Задача не найдена</h1>;
     }
+    
+    const taskId = task.id;
+
+    async function handleSubmit() {
+    const response = await fetch(
+        "http://127.0.0.1:8000/api/submissions",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+                task_id: taskId,
+                code: code,
+            }),
+        }
+    );
+
+    const data = await response.json();
+
+    console.log(data);
+    }
 
     return (
         <>
@@ -34,7 +58,7 @@ export default function TaskPage() {
                     <div className="task-editor-actions">
                         <button
                             className="task-submit"
-                            onClick={() => console.log(code)}
+                            onClick={() => {handleSubmit}}
                         >
                             Отправить
                         </button>
