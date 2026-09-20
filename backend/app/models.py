@@ -28,6 +28,18 @@ class Submission(Base):
         index=True,
     )
     code: Mapped[str] = mapped_column(Text, nullable=False)
+    language: Mapped[str] = mapped_column(
+        String(20),
+        default="python",
+        server_default="python",
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
