@@ -5,14 +5,34 @@ import Navbar from "../components/Navbar";
 import Editor from "@monaco-editor/react";
 
 type Language = "python" | "javascript" | "cpp" | "java";
+type SubmissionStatus =
+    | "accepted"
+    | "wrong_answer"
+    | "runtime_error"
+    | "time_limit_exceeded"
+    | "compilation_error"
+    | "compilation_timeout"
+    | "runner_error"
+    | "no_tests";
 
 export default function TaskPage() {
     const { id } = useParams();
     const [code, setCode] = useState("");
     const [task, setTask] = useState<Task | null>(null);
     const [language, setLanguage] = useState<Language>("python");
-    const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
+    const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const statusLabels: Record<SubmissionStatus, string> = {
+        accepted: "Принято",
+        wrong_answer: "Неверный ответ",
+        runtime_error: "Ошибка выполнения",
+        time_limit_exceeded: "Превышено время",
+        compilation_error: "Ошибка компиляции",
+        compilation_timeout: "Превышено время компиляции",
+        runner_error: "Ошибка системы проверки",
+        no_tests: "Нет тестов",
+    };
 
     useEffect(() => {
         async function loadTask() {
@@ -103,7 +123,7 @@ export default function TaskPage() {
                         <button
                             className="task-submit"
                             onClick={handleSubmit}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !code.trim()}
                         >
                             {isSubmitting ? "Проверка..." : "Отправить"}
                         </button>
@@ -114,7 +134,7 @@ export default function TaskPage() {
                             className="submission-status"
                             data-status={submissionStatus}
                         >
-                            {submissionStatus}
+                            {statusLabels[submissionStatus]}
                         </div>
                     )}
 
