@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+
+Language = Literal["python", "javascript", "cpp", "java"]
 
 
 class TaskRead(BaseModel):
@@ -18,6 +22,7 @@ class TaskRead(BaseModel):
 class SubmissionCreate(BaseModel):
     task_id: int
     code: str
+    language: Language
 
 
 class SubmissionRead(BaseModel):
@@ -26,4 +31,6 @@ class SubmissionRead(BaseModel):
     id: int
     task_id: int
     code: str
+    language: Language
+    status: str
     created_at: datetime
