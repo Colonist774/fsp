@@ -129,15 +129,6 @@ export default function TaskPage() {
                         </button>
                     </div>
 
-                    {submissionStatus && (
-                        <div
-                            className="submission-status"
-                            data-status={submissionStatus}
-                        >
-                            {statusLabels[submissionStatus]}
-                        </div>
-                    )}
-
                     <div className="code-editor-shell">
                         <Editor
                             height="100%"
@@ -200,6 +191,15 @@ export default function TaskPage() {
                             }}
                         />
                     </div>
+
+                    {submissionStatus && (
+                        <div
+                            className="submission-status"
+                            data-status={submissionStatus}
+                        >
+                            {statusLabels[submissionStatus]}
+                        </div>
+                    )}
                 </section>
             </main>
         </>
