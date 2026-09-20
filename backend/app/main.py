@@ -1,12 +1,15 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-class SubmissionCreate(BaseModel):
-    task_id: int
-    code: str
+from app.database import get_db
+from app.models import Submission, Task
+from app.schemas import SubmissionCreate, SubmissionRead, TaskRead
+
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -23,54 +26,50 @@ app.add_middleware(
 def root():
     return {"status": "ok"}
 
-@app.post("/api/submissions")
-def create_submission(submission: SubmissionCreate):
-    return {
-        "task_id": submission.task_id,
-        "code": submission.code,
-    }
 
-@app.get("/api/tasks")
-def get_tasks():
-    return tasks
+@app.get("/api/tasks", response_model=list[TaskRead])
+def get_tasks(db: Session = Depends(get_db)):
+    statement = select(Task).order_by(Task.id)
+    return db.scalars(statement).all()
 
-@app.get("/api/tasks/{task_id}")
-def get_task(task_id: int):
-    for task in tasks:
-        if task["id"] == task_id:
-            return task
 
-    raise HTTPException(
-        status_code=404,
-        detail="Задача не найдена"
+@app.get("/api/tasks/{task_id}", response_model=TaskRead)
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    return task
+
+
+@app.post(
+    "/api/submissions",
+    response_model=SubmissionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_submission(
+    submission_data: SubmissionCreate,
+    db: Session = Depends(get_db),
+):
+    task = db.get(Task, submission_data.task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    submission = Submission(
+        task_id=submission_data.task_id,
+        code=submission_data.code,
     )
 
-tasks = [
-    {
-        "id": 1,
-        "title": "Быстрая сортировка",
-        "difficulty": 3,
-        "solved": False,
-        "description": "Напишите алгоритм быстрой сортировки данных",
-        "input": "",
-        "output": "",
-    },
-    {
-        "id": 2,
-        "title": "Работа со строками",
-        "difficulty": 1,
-        "solved": False,
-        "description": "Объедините две исходные строки в одну",
-        "input": "",
-        "output": "",
-    },
-    {
-        "id": 3,
-        "title": "Работа с числами",
-        "difficulty": 1,
-        "solved": False,
-        "description": "Объедините две исходные строки в одну",
-        "input": "",
-        "output": "",
-    },
-]
+    db.add(submission)
+    db.commit()
+    db.refresh(submission)
+
+    return submission
