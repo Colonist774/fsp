@@ -222,3 +222,100 @@ nav a[aria-current="page"]::after {
     font-size: 13px;
   }
 }
+
+
+/* Contests */
+.problem-list {
+  display: grid;
+  gap: 12px;
+}
+
+.contest-card {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.14);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.contest-card:hover {
+  background: var(--surface-hover);
+  border-color: #343c4b;
+  transform: translateY(-1px);
+}
+
+.contest-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.contest-card > span:not(.contest-title) {
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.contest-card button {
+  height: 38px;
+  min-width: 104px;
+  padding: 0 16px;
+  border: 1px solid rgba(111, 148, 255, 0.34);
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: #b9c9ff;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 100ms ease;
+}
+
+.contest-card button:hover {
+  background: rgba(111, 148, 255, 0.18);
+  border-color: rgba(111, 148, 255, 0.52);
+  color: #d8e0ff;
+}
+
+.contest-card button:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 700px) {
+  .contest-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 18px;
+  }
+
+  .contest-title {
+    white-space: normal;
+  }
+
+  .contest-card > span:not(.contest-title) {
+    white-space: normal;
+  }
+
+  .contest-card button {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
