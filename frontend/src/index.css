@@ -422,12 +422,15 @@ nav a[aria-current="page"]::after {
 }
 
 .submission-status {
-  padding: 8px 14px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
   border-top: 1px solid var(--border);
   background: #11151a;
   color: var(--text-secondary);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .submission-status[data-status="accepted"] {
