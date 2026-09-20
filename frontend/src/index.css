@@ -367,7 +367,7 @@ nav a[aria-current="page"]::after {
   min-height: 52px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 8px;
   padding: 0 12px;
   border-bottom: 1px solid var(--border);
@@ -419,7 +419,7 @@ nav a[aria-current="page"]::after {
 
 .submission-status {
   padding: 8px 14px;
-  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   background: #11151a;
   color: var(--text-secondary);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
