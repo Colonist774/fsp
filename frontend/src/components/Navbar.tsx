@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 export default function Navbar() {
   return (
     <nav>
-      <strong>FSP</strong>
+      <strong>ФСП</strong>
 
       <NavLink to="/">Решать</NavLink>
       <NavLink to="/contests">Соревнования</NavLink>

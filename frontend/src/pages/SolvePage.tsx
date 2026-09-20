@@ -1,14 +1,9 @@
 import Navbar from "../components/Navbar";
-import ProblemRow from "../components/ProblemRow";
+import ProblemRow from "../components/TaskRow";
 
-type Task = {
-  id: number;
-  title: string;
-  difficulty: number;
-  solved: boolean;
-};
+import type { Task } from "../types/task";
 
-const problems: Task[] = [
+const tasks: Task[] = [
   {
     id: 1,
     title: "Быстрая сортировка",
@@ -30,19 +25,18 @@ const problems: Task[] = [
 ];
 
 export default function SolvePage() {
-  return (
-    <>
-      <Navbar />
+    return (
+        <>
+            <Navbar />
+            <main className="page solve-page">
+                <h1>Решать</h1>
 
-      <main className="page solve-page">
-        <h1>Решать</h1>
-
-        <div className="problem-list">
-          {problems.map((task) => (
-            <ProblemRow key={task.id} task={task} />
-          ))}
-        </div>
-      </main>
-    </>
-  );
+                <div className="problem-list">
+                    {tasks.map((task) => (
+                    <ProblemRow key={task.id} task={task} />
+                    ))}
+                </div>
+            </main>
+        </>
+    );
 }

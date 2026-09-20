@@ -139,7 +139,7 @@ nav a[aria-current="page"]::after {
   font-weight: 650;
 }
 
-.problem-list {
+.task-list {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -147,7 +147,7 @@ nav a[aria-current="page"]::after {
   box-shadow: 0 16px 50px rgba(0, 0, 0, 0.18);
 }
 
-.problem-row {
+.task-row {
   min-height: 66px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px 34px;
@@ -159,15 +159,15 @@ nav a[aria-current="page"]::after {
   transition: background 150ms ease;
 }
 
-.problem-row:last-child {
+.task-row:last-child {
   border-bottom: 0;
 }
 
-.problem-row:hover {
+.task-row:hover {
   background: var(--surface-hover);
 }
 
-.problem-title {
+.task-title {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,13 +176,13 @@ nav a[aria-current="page"]::after {
   font-weight: 520;
 }
 
-.problem-difficulty {
+.task-difficulty {
   justify-self: start;
   letter-spacing: 1px;
   font-size: 15px;
 }
 
-.problem-solved {
+.task-solved {
   justify-self: end;
   color: var(--success);
   font-size: 18px;
