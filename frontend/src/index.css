@@ -471,9 +471,36 @@ nav a[aria-current="page"]::after {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   padding: 0 18px;
   border-bottom: 1px solid var(--border);
   background: #10151c;
+}
+
+.task-editor-actions select {
+  height: 36px;
+  min-width: 132px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.task-editor-actions select:hover {
+  background: var(--surface-hover);
+  border-color: #343c4b;
+}
+
+.task-editor-actions select:focus {
+  border-color: rgba(111, 148, 255, 0.7);
 }
 
 .task-submit {
