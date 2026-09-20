@@ -34,12 +34,14 @@ export default function SolvePage() {
     <>
       <Navbar />
 
-      <main>
+      <main className="page solve-page">
         <h1>Решать</h1>
 
-        {problems.map((task) => (
-            <ProblemRow task={task}/>
-        ))}
+        <div className="problem-list">
+          {problems.map((task) => (
+            <ProblemRow key={task.id} task={task} />
+          ))}
+        </div>
       </main>
     </>
   );
