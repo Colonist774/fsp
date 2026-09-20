@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar";
 import ContestCard from "../components/ContestCard";
-import type { Contest } from "../types/contest";
+import type { Contest, ContestStatus } from "../types/contest";
 
 export const contests: Contest[] = [
   {
@@ -41,12 +41,29 @@ return (
       <Navbar />
         <main className="page placeholder-page">
           <div className="problem-list">
-              {contests.map((contest) => (
-                // const start = new Date(contest.startAt);
-                // const end = new Date(contest.endAt);
-                // const now = new Date();
-                <ContestCard key={contest.id} contest={contest} status={}/>
-              ))}
+              {contests.map((contest) => {
+                const start = new Date(contest.startAt);
+                const end = new Date(contest.endAt);
+                const now = new Date();
+                
+                let status: ContestStatus;
+
+                if (now < start) {
+                  status = "future";
+                } else if (now > end) {
+                  status = "past";
+                } else {
+                  status = "active";
+                }
+
+                return (
+                  <ContestCard 
+                    key={contest.id} 
+                    contest={contest} 
+                    status={status}
+                  />
+                )
+                })}
           </div>
         </main>
     </>
