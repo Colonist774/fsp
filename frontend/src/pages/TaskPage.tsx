@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { Task } from "../types/task";
 import Navbar from "../components/Navbar";
+import Editor from "@monaco-editor/react";
 
 type Language = "python" | "javascript" | "cpp" | "java";
 
@@ -114,10 +115,21 @@ export default function TaskPage() {
                         </div>
                     )}
 
-                    <textarea
-                        className="task-code-editor"
+                    <Editor
+                        height="100%"
+                        defaultLanguage={language}
                         value={code}
-                        onChange={(event) => setCode(event.target.value)}
+                        onChange={(value) => setCode(value || "")}
+                        theme="vs-dark"
+                        options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            lineNumbers: "on",
+                            roundedSelection: false,
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                            tabSize: 4,
+                        }}
                     />
                 </section>
             </main>
