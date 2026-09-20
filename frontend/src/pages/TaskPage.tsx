@@ -1,41 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { tasks } from "../data/tasks";
+import type { Task } from "../types/task";
 import Navbar from "../components/Navbar";
 
 export default function TaskPage() {
     const { id } = useParams();
     const [code, setCode] = useState("");
+    const [task, setTask] = useState<Task | null>(null);
 
-    const task = tasks.find((task) => task.id === Number(id));
+    useEffect(() => {
+        async function loadTask() {
+            const response = await fetch(
+                `http://127.0.0.1:8000/api/tasks/${id}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Не удалось загрузить задачу");
+            };
+
+            const task = await response.json();
+
+            setTask(task);
+        }
+
+        loadTask()
+    }, [])
+
+    async function handleSubmit() {
+        const response = await fetch(
+            "http://127.0.0.1:8000/api/submissions",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                    task_id: taskId,
+                    code: code,
+                }),
+            }
+        );
+
+        const data = await response.json();
+
+        console.log(data);
+    }
 
     if (!task) {
         return <h1>Задача не найдена</h1>;
     }
     
     const taskId = task.id;
-
-    async function handleSubmit() {
-    const response = await fetch(
-        "http://127.0.0.1:8000/api/submissions",
-        {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify({
-                task_id: taskId,
-                code: code,
-            }),
-        }
-    );
-
-    const data = await response.json();
-
-    console.log(data);
-    }
 
     return (
         <>

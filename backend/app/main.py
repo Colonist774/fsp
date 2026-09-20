@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
 
 class SubmissionCreate(BaseModel):
     task_id: int
@@ -33,6 +34,17 @@ def create_submission(submission: SubmissionCreate):
 @app.get("/api/tasks")
 def get_tasks():
     return tasks
+
+@app.get("api/tasks/{task_id}")
+def get_task(task_id: int):
+    for task in tasks:
+        if task["id"] == task_id:
+            return task
+
+    raise HTTPException(
+        status_code=404,
+        detail="Задача не найдена"
+    )
 
 tasks = [
     {
