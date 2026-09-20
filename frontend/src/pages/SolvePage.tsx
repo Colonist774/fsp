@@ -1,28 +1,29 @@
 import Navbar from "../components/Navbar";
+import ProblemRow from "../components/ProblemRow";
 
-type Problem = {
+type Task = {
   id: number;
   title: string;
   difficulty: number;
   solved: boolean;
 };
 
-const problems: Problem[] = [
+const problems: Task[] = [
   {
     id: 1,
-    title: "Quick Sorting",
+    title: "Быстрая сортировка",
     difficulty: 3,
     solved: true,
   },
   {
     id: 2,
-    title: "String Processing",
+    title: "Работа со строками",
     difficulty: 1,
     solved: false,
   },
   {
     id: 3,
-    title: "Binary Search Basics",
+    title: "Бинарный поиск",
     difficulty: 2,
     solved: false,
   },
@@ -34,18 +35,10 @@ export default function SolvePage() {
       <Navbar />
 
       <main>
-        <h1>Problems</h1>
+        <h1>Решать</h1>
 
-        {problems.map((problem) => (
-          <div key={problem.id}>
-            <span>{problem.title}</span>
-
-            <span>
-              {"★".repeat(problem.difficulty)}
-            </span>
-
-            {problem.solved && <span>✓</span>}
-          </div>
+        {problems.map((task) => (
+            <ProblemRow task={task}/>
         ))}
       </main>
     </>

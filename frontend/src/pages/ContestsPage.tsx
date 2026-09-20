@@ -1,10 +1,10 @@
 import Navbar from "../components/Navbar";
 
-export default function ContestsPage() {
+export default function AnnouncementsPage() {
   return (
     <>
       <Navbar />
-      <h1>Contests</h1>
+      <h1>Соревнования</h1>
     </>
   );
 }

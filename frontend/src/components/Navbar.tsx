@@ -1,15 +1,17 @@
-import { Link } from "react-router-dom";
+import {
+  NavLink,
+} from "react-router-dom";
 
 export default function Navbar() {
   return (
     <nav>
       <strong>FSP</strong>
 
-      <Link to="/">Solve</Link>
-      <Link to="/contests">Contests</Link>
-      <Link to="/announcements">Announcements</Link>
+      <NavLink to="/">Решать</NavLink>
+      <NavLink to="/contests">Соревнования</NavLink>
+      <NavLink to="/announcements">Анонсы</NavLink>
 
-      <button>Avatar</button>
+      <button>👤</button>
     </nav>
   );
 }

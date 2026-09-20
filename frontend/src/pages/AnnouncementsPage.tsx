@@ -4,7 +4,7 @@ export default function ContestsPage() {
   return (
     <>
       <Navbar />
-      <h1>Annountments</h1>
+      <h1>Анонсы</h1>
     </>
   );
 }
