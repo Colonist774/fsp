@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
@@ -35,7 +35,7 @@ def create_submission(submission: SubmissionCreate):
 def get_tasks():
     return tasks
 
-@app.get("api/tasks/{task_id}")
+@app.get("/api/tasks/{task_id}")
 def get_task(task_id: int):
     for task in tasks:
         if task["id"] == task_id:
