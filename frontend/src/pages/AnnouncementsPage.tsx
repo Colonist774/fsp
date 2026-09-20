@@ -1,10 +1,12 @@
 import Navbar from "../components/Navbar";
 
-export default function ContestsPage() {
+export default function AnnouncementsPage() {
   return (
     <>
       <Navbar />
-      <h1>Анонсы</h1>
+      <main className="page placeholder-page">
+        <h1>Анонсы</h1>
+      </main>
     </>
   );
 }
