@@ -192,14 +192,12 @@ export default function TaskPage() {
                         />
                     </div>
 
-                    {submissionStatus && (
-                        <div
-                            className="submission-status"
-                            data-status={submissionStatus}
-                        >
-                            {statusLabels[submissionStatus]}
-                        </div>
-                    )}
+                    <div
+                        className="submission-status"
+                        data-status={submissionStatus ?? undefined}
+                    >
+                        Результат: {submissionStatus ? statusLabels[submissionStatus] : ""}
+                    </div>
                 </section>
             </main>
         </>
