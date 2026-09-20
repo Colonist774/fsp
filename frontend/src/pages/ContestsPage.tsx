@@ -36,36 +36,48 @@ export const contests: Contest[] = [
 ];
 
 export default function ContestsPage() {
-return (
+  return (
     <>
       <Navbar />
-        <main className="page placeholder-page">
-          <div className="problem-list">
-              {contests.map((contest) => {
-                const start = new Date(contest.startAt);
-                const end = new Date(contest.endAt);
-                const now = new Date();
-                
-                let status: ContestStatus;
 
-                if (now < start) {
-                  status = "future";
-                } else if (now > end) {
-                  status = "past";
-                } else {
-                  status = "active";
-                }
-
-                return (
-                  <ContestCard 
-                    key={contest.id} 
-                    contest={contest} 
-                    status={status}
-                  />
-                )
-                })}
+      <main className="page contests-page">
+        <div className="page-heading">
+          <div>
+            <span className="page-eyebrow">Соревнования</span>
+            <h1>Турниры</h1>
           </div>
-        </main>
+
+          <p className="page-description">
+            Участвуйте в активных соревнованиях и следите за предстоящими турнирами.
+          </p>
+        </div>
+
+        <div className="contest-list">
+          {contests.map((contest) => {
+            const start = new Date(contest.startAt);
+            const end = new Date(contest.endAt);
+            const now = new Date();
+
+            let status: ContestStatus;
+
+            if (now < start) {
+              status = "future";
+            } else if (now > end) {
+              status = "past";
+            } else {
+              status = "active";
+            }
+
+            return (
+              <ContestCard
+                key={contest.id}
+                contest={contest}
+                status={status}
+              />
+            );
+          })}
+        </div>
+      </main>
     </>
   );
 }
