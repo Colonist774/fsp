@@ -1,5 +1,5 @@
 import Navbar from "../components/Navbar";
-import ProblemRow from "../components/TaskRow";
+import TaskRow from "../components/TaskRow";
 import { tasks } from "../data/tasks";
 export default function SolvePage() {
     return (
@@ -10,7 +10,7 @@ export default function SolvePage() {
 
                 <div className="problem-list">
                     {tasks.map((task) => (
-                    <ProblemRow key={task.id} task={task} />
+                    <TaskRow key={task.id} task={task} />
                     ))}
                 </div>
             </main>
