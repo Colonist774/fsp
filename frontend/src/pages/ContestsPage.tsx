@@ -3,7 +3,8 @@ import Navbar from "../components/Navbar";
 import ContestCard from "../components/ContestCard";
 import type { Contest, ContestStatus } from "../types/contest";
 
-type SidebarButtons = "active" | "past" | "future" | "top"
+type SidebarButtons = "active" | "past" | "future" | "top";
+
 export const contests: Contest[] = [
   {
     id: 1,
@@ -37,50 +38,79 @@ export const contests: Contest[] = [
   },
 ];
 
+function getContestStatus(contest: Contest, now: Date): ContestStatus {
+  const start = new Date(contest.startAt);
+  const end = new Date(contest.endAt);
+
+  if (now < start) {
+    return "future";
+  }
+
+  if (now > end) {
+    return "past";
+  }
+
+  return "active";
+}
+
 export default function ContestsPage() {
   const [selectedTab, setSelectedTab] = useState<SidebarButtons>("active");
+  const now = new Date();
+
+  const visibleContests =
+    selectedTab === "top"
+      ? []
+      : contests.filter(
+          (contest) => getContestStatus(contest, now) === selectedTab,
+        );
 
   return (
-      <>
-        <Navbar />
-          <main className="page placeholder-page">
-            <aside className="contest-sidebar">
-              <button onClick={() => setSelectedTab("active")}>Активные</button>
-              <button onClick={() => setSelectedTab("past")}>Завершенные</button>
-              <button onClick={() => setSelectedTab("future")}>Будущие</button>
-              <button onClick={() => setSelectedTab("top")}>Таблица лидеров</button>
-            </aside>
+    <>
+      <Navbar />
 
-            <section className="contest-content">
-              <div className="problem-list">
-                  {contests.map((contest) => {
-                    const start = new Date(contest.startAt);
-                    const end = new Date(contest.endAt);
-                    const now = new Date();
-                    
-                    let status: ContestStatus;
+      <main className="page contests-layout">
+        <aside className="contest-sidebar">
+          <button
+            className={selectedTab === "active" ? "is-active" : ""}
+            onClick={() => setSelectedTab("active")}
+          >
+            Активные
+          </button>
 
-                    if (now < start) {
-                      status = "future";
-                    } else if (now > end) {
-                      status = "past";
-                    } else {
-                      status = "active";
-                    }
-                    
-                    if (status === selectedTab) {
-                      return (
-                        <ContestCard 
-                          key={contest.id} 
-                          contest={contest} 
-                          status={status}
-                        />
-                      )
-                    }
-                    })}
-              </div>
-            </section>
-          </main>
-      </>
-    );
+          <button
+            className={selectedTab === "past" ? "is-active" : ""}
+            onClick={() => setSelectedTab("past")}
+          >
+            Завершенные
+          </button>
+
+          <button
+            className={selectedTab === "future" ? "is-active" : ""}
+            onClick={() => setSelectedTab("future")}
+          >
+            Будущие
+          </button>
+
+          <button
+            className={selectedTab === "top" ? "is-active" : ""}
+            onClick={() => setSelectedTab("top")}
+          >
+            Таблица лидеров
+          </button>
+        </aside>
+
+        <section className="contest-content">
+          <div className="problem-list">
+            {visibleContests.map((contest) => (
+              <ContestCard
+                key={contest.id}
+                contest={contest}
+                status={getContestStatus(contest, now)}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+    </>
+  );
 }
