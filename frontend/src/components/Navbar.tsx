@@ -1,6 +1,4 @@
-import {
-  NavLink,
-} from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
   return (
@@ -11,7 +9,9 @@ export default function Navbar() {
       <NavLink to="/contests">Соревнования</NavLink>
       <NavLink to="/announcements">Анонсы</NavLink>
 
-      <button>👤</button>
+      <button className="nav-avatar" aria-label="Профиль">
+        👤
+      </button>
     </nav>
   );
 }
