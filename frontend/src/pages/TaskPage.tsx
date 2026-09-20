@@ -10,6 +10,8 @@ export default function TaskPage() {
     const [code, setCode] = useState("");
     const [task, setTask] = useState<Task | null>(null);
     const [language, setLanguage] = useState<Language>("python");
+    const [submissionStatus, setSubmissionStatus] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         async function loadTask() {
@@ -30,6 +32,9 @@ export default function TaskPage() {
     }, [id])
 
     async function handleSubmit() {
+        setIsSubmitting(true);
+        setSubmissionStatus(null);
+
         const response = await fetch(
             "http://127.0.0.1:8000/api/submissions",
             {
@@ -48,6 +53,9 @@ export default function TaskPage() {
         );
 
         const data = await response.json();
+
+        setSubmissionStatus(data.status);
+        setIsSubmitting(false);
 
         console.log(data);
     }
@@ -93,7 +101,7 @@ export default function TaskPage() {
                             className="task-submit"
                             onClick={handleSubmit}
                         >
-                            Отправить
+                            {isSubmitting ? "Проверка..." : "Отправить"}
                         </button>
                     </div>
 
