@@ -15,25 +15,37 @@ export default function TaskPage() {
 
     return (
         <>
-            <Navbar/>
-            <main>
-            <h1>{task.title}</h1>
+            <Navbar />
 
-            <p>{task.description}</p>
+            <main className="task-workspace">
+                <section className="task-statement">
+                    <h1>{task.title}</h1>
 
-            <h2>Входные данные</h2>
-            <p>{task.input}</p>
+                    <p>{task.description}</p>
 
-            <h2>Выходные данные</h2>
-            <p>{task.output}</p>
+                    <h2>Входные данные</h2>
+                    <p>{task.input}</p>
 
-            <textarea
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-            />
-            <button onClick={() => console.log(code)}>
-                Отправить
-            </button>
+                    <h2>Выходные данные</h2>
+                    <p>{task.output}</p>
+                </section>
+
+                <section className="task-editor">
+                    <div className="task-editor-actions">
+                        <button
+                            className="task-submit"
+                            onClick={() => console.log(code)}
+                        >
+                            Отправить
+                        </button>
+                    </div>
+
+                    <textarea
+                        className="task-code-editor"
+                        value={code}
+                        onChange={(event) => setCode(event.target.value)}
+                    />
+                </section>
             </main>
         </>
     );
