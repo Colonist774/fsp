@@ -58,7 +58,7 @@ export default function TaskPage() {
                     <div className="task-editor-actions">
                         <button
                             className="task-submit"
-                            onClick={() => {handleSubmit}}
+                            onClick={handleSubmit}
                         >
                             Отправить
                         </button>

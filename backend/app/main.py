@@ -29,3 +29,37 @@ def create_submission(submission: SubmissionCreate):
         "task_id": submission.task_id,
         "code": submission.code,
     }
+
+@app.get("/api/tasks")
+def get_tasks():
+    return tasks
+
+tasks = [
+    {
+        "id": 1,
+        "title": "Быстрая сортировка",
+        "difficulty": 3,
+        "solved": False,
+        "description": "Напишите алгоритм быстрой сортировки данных",
+        "input": "",
+        "output": "",
+    },
+    {
+        "id": 2,
+        "title": "Работа со строками",
+        "difficulty": 1,
+        "solved": False,
+        "description": "Объедините две исходные строки в одну",
+        "input": "",
+        "output": "",
+    },
+    {
+        "id": 3,
+        "title": "Работа с числами",
+        "difficulty": 1,
+        "solved": False,
+        "description": "Объедините две исходные строки в одну",
+        "input": "",
+        "output": "",
+    },
+]
