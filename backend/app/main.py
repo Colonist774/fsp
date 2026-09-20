@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.judge import judge_submission
 from app.models import Submission, Task
 from app.schemas import SubmissionCreate, SubmissionRead, TaskRead
 
@@ -74,4 +75,4 @@ def create_submission(
     db.commit()
     db.refresh(submission)
 
-    return submission
+    return judge_submission(db, submission)
