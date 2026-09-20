@@ -24,7 +24,7 @@ export default function TaskPage() {
         }
 
         loadTask()
-    }, [])
+    }, [id])
 
     async function handleSubmit() {
         const response = await fetch(
