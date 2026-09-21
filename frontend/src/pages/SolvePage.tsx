@@ -8,8 +8,15 @@ export default function SolvePage() {
 
     useEffect(() => {
         async function loadTasks() {
+            const token = localStorage.getItem("token");
+
             const response = await fetch(
-                "http://127.0.0.1:8000/api/tasks"
+                "http://127.0.0.1:8000/api/tasks",
+                {
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : undefined,
+                }
             )
             
             if (!response.ok) {
