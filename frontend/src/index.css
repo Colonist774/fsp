@@ -194,8 +194,28 @@ nav a[aria-current="page"]::after {
 
 .task-difficulty {
   justify-self: start;
-  font-size: 14px;
-  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #d29922;
+}
+
+.difficulty-star {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+
+.difficulty-star.is-filled {
+  fill: currentColor;
+}
+
+.difficulty-star.is-empty {
+  fill: transparent;
+  opacity: 0.58;
 }
 
 .task-solved {
@@ -549,8 +569,9 @@ nav a[aria-current="page"]::after {
     padding: 0 14px;
   }
 
-  .task-difficulty {
-    font-size: 13px;
+  .difficulty-star {
+    width: 15px;
+    height: 15px;
   }
 
   .contest-card {
