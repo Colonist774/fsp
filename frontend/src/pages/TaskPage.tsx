@@ -36,8 +36,15 @@ export default function TaskPage() {
 
     useEffect(() => {
         async function loadTask() {
+            const token = localStorage.getItem("token");
+
             const response = await fetch(
-                `http://127.0.0.1:8000/api/tasks/${id}`
+                `http://127.0.0.1:8000/api/tasks/${id}`,
+                {
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : undefined,
+                }
             );
 
             if (!response.ok) {
@@ -64,6 +71,11 @@ export default function TaskPage() {
 
                     headers: {
                         "Content-Type": "application/json",
+                        ...(localStorage.getItem("token")
+                            ? {
+                                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                            }
+                            : {}),
                     },
 
                     body: JSON.stringify({
