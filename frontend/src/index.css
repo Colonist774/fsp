@@ -53,8 +53,6 @@ a {
   text-decoration: none;
 }
 
-/* Navbar */
-
 nav {
   height: 64px;
   display: flex;
@@ -126,8 +124,6 @@ nav a[aria-current="page"]::after {
   color: var(--text);
 }
 
-/* General pages */
-
 .page {
   width: min(100% - 48px, 1040px);
   margin: 0 auto;
@@ -152,8 +148,6 @@ nav a[aria-current="page"]::after {
   gap: 10px;
 }
 
-/* Tasks list */
-
 .solve-page .problem-list {
   gap: 0;
   overflow: hidden;
@@ -165,7 +159,7 @@ nav a[aria-current="page"]::after {
 .task-row {
   min-height: 64px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px 34px;
+  grid-template-columns: minmax(0, 1fr) 100px 140px;
   align-items: center;
   gap: 20px;
   padding: 0 20px;
@@ -219,13 +213,22 @@ nav a[aria-current="page"]::after {
 }
 
 .task-solved {
-  justify-self: end;
+  justify-self: center;
   color: var(--success);
   font-size: 17px;
   font-weight: 700;
 }
 
-/* Contests */
+.task-notsolved {
+  justify-self: center;
+  font-size: 17px;
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+.task-notsolved:hover {
+  opacity: 1;
+}
 
 .page.contests-layout {
   width: 100%;
@@ -333,8 +336,6 @@ nav a[aria-current="page"]::after {
   border-color: #4778b2;
   background: #1d4677;
 }
-
-/* Task workspace */
 
 .task-workspace {
   height: calc(100vh - 64px);
@@ -482,8 +483,6 @@ nav a[aria-current="page"]::after {
   background-color: #0d1117 !important;
 }
 
-/* Responsive */
-
 @media (max-width: 900px) {
   .task-workspace {
     height: auto;
@@ -589,9 +588,6 @@ nav a[aria-current="page"]::after {
     width: 100%;
   }
 }
-
-
-/* Auth */
 
 .auth-page {
   min-height: 100vh;

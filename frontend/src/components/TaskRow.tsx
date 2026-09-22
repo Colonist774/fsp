@@ -33,7 +33,9 @@ export default function TaskRow({ task }: TaskRowProps) {
           })}
         </span>
 
-        <span className="task-solved">{task.solved ? "✓" : ""}</span>
+        {task.solved ? (
+          <span className="task-solved">Выполнено ✓</span>
+        ) : <span className="task-notsolved">Начать</span>}
       </div>
     </Link>
   );
