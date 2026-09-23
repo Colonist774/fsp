@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Language = Literal["python", "javascript", "cpp", "java"]
 UserRole = Literal["participant", "organizer"]
+TeamStatus = Literal["member", "looking", "solo"]
 
 
 class TaskRead(BaseModel):
@@ -64,8 +65,24 @@ class UserRead(BaseModel):
 
 
 class UserMe(UserRead):
+    email: str | None
+    bio: str | None
+    team_status: TeamStatus
+    team_name: str | None
     solved_tasks: int
     submissions: int
+
+
+class UserProfileUpdate(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    email: str = Field(
+        min_length=5,
+        max_length=254,
+        pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+    )
+    bio: str | None = Field(default=None, max_length=1000)
+    team_status: TeamStatus
+    team_name: str | None = Field(default=None, max_length=100)
 
 
 class TokenRead(BaseModel):
