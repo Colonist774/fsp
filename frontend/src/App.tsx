@@ -9,6 +9,8 @@ import LoginPage from "./pages/LoginPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import StatisticsPage from "./pages/StatisticsPage";
 import RatingPage from "./pages/RatingPage";
+import CompetitionPage from "./pages/CompetitionPage";
+import CompetitionFormPage from "./pages/CompetitionFormPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -90,6 +92,15 @@ export default function App() {
       <Route path="/" element={<ContestsPage />} />
       <Route path="/solve" element={<SolvePage />} />
       <Route path="/rating" element={<RatingPage />} />
+      <Route path="/contests/:id" element={<CompetitionPage />} />
+      <Route
+        path="/organizer/competitions/new"
+        element={<CompetitionFormPage />}
+      />
+      <Route
+        path="/organizer/competitions/:id/edit"
+        element={<CompetitionFormPage />}
+      />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/tasks/:id" element={<TaskPage />} />
       <Route path="/profile/edit" element={<EditProfilePage />} />
