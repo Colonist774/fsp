@@ -110,6 +110,45 @@ class CompetitionRegistration(Base):
     )
 
 
+class CompetitionResult(Base):
+    __tablename__ = "competition_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "competition_id",
+            "user_id",
+            name="uq_competition_results_competition_user",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    competition_id: Mapped[int] = mapped_column(
+        ForeignKey("competitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    place: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    result_text: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class Task(Base):
     __tablename__ = "tasks"
 
