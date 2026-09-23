@@ -54,11 +54,12 @@ def register(
     db: Session = Depends(get_db),
 ):
     username = user_data.username.strip()
+    email = user_data.email.strip().lower()
 
-    if not username:
+    if len(username) < 3:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Имя пользователя не может быть пустым",
+            detail="Имя пользователя должно содержать минимум 3 символа",
         )
 
     existing_user = db.scalar(
@@ -71,8 +72,19 @@ def register(
             detail="Пользователь с таким именем уже существует",
         )
 
+    existing_email = db.scalar(
+        select(User).where(User.email == email)
+    )
+
+    if existing_email is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь с таким email уже существует",
+        )
+
     user = User(
         username=username,
+        email=email,
         password_hash=hash_password(user_data.password),
         role="participant",
         rating=0,
