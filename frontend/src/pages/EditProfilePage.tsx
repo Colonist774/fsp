@@ -1,0 +1,240 @@
+import { useEffect, useState, type FormEvent } from "react";
+import Navbar from "../components/Navbar";
+
+type TeamStatus = "member" | "looking" | "solo";
+
+type CurrentUser = {
+  username: string;
+  email: string | null;
+  bio: string | null;
+  team_status: TeamStatus;
+  team_name: string | null;
+};
+
+type ApiResponse = CurrentUser & {
+  detail?: string;
+};
+
+export default function EditProfilePage() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
+  const [teamStatus, setTeamStatus] = useState<TeamStatus>("solo");
+  const [teamName, setTeamName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    async function loadProfile() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/me",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          setError("Не удалось загрузить профиль");
+          return;
+        }
+
+        const user: CurrentUser = await response.json();
+
+        setUsername(user.username);
+        setEmail(user.email ?? "");
+        setBio(user.bio ?? "");
+        setTeamStatus(user.team_status);
+        setTeamName(user.team_name ?? "");
+      } catch {
+        setError("Не удалось подключиться к серверу");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, []);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const token = localStorage.getItem("token");
+    const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedTeamName = teamName.trim();
+
+    if (!token) {
+      setError("Требуется авторизация");
+      return;
+    }
+
+    if (normalizedUsername.length < 3) {
+      setError("Имя пользователя должно содержать минимум 3 символа");
+      return;
+    }
+
+    if (!normalizedEmail) {
+      setError("Введите email");
+      return;
+    }
+
+    if (teamStatus === "member" && !normalizedTeamName) {
+      setError("Укажите название команды");
+      return;
+    }
+
+    setError(null);
+    setSaved(false);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/me/profile",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            username: normalizedUsername,
+            email: normalizedEmail,
+            bio: bio.trim() || null,
+            team_status: teamStatus,
+            team_name:
+              teamStatus === "member" ? normalizedTeamName : null,
+          }),
+        },
+      );
+
+      const data: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось сохранить изменения",
+        );
+        return;
+      }
+
+      setUsername(data.username);
+      setEmail(data.email ?? "");
+      setBio(data.bio ?? "");
+      setTeamStatus(data.team_status);
+      setTeamName(data.team_name ?? "");
+      setSaved(true);
+      window.dispatchEvent(new Event("profile-updated"));
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <Navbar />
+
+      <main className="page profile-edit-page">
+        <h1>Редактировать профиль</h1>
+
+        <form className="profile-edit-form" onSubmit={handleSubmit}>
+          <label>
+            <span>Имя пользователя</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              minLength={3}
+              maxLength={50}
+              disabled={isLoading || isSaving}
+              required
+            />
+          </label>
+
+          <label>
+            <span>Bio</span>
+            <textarea
+              value={bio}
+              onChange={(event) => setBio(event.target.value)}
+              placeholder="Можете рассказать о себе, своих навыках, целях и оставить контакт для обратной связи. Так вами могут заинтересоваться команды."
+              maxLength={1000}
+              rows={7}
+              disabled={isLoading || isSaving}
+            />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              maxLength={254}
+              disabled={isLoading || isSaving}
+              required
+            />
+          </label>
+
+          <label>
+            <span>Статус команды</span>
+            <select
+              value={teamStatus}
+              onChange={(event) => {
+                const value = event.target.value as TeamStatus;
+                setTeamStatus(value);
+
+                if (value !== "member") {
+                  setTeamName("");
+                }
+              }}
+              disabled={isLoading || isSaving}
+            >
+              <option value="member">В команде</option>
+              <option value="looking">В поиске</option>
+              <option value="solo">-</option>
+            </select>
+          </label>
+
+          {teamStatus === "member" && (
+            <label>
+              <span>Название команды</span>
+              <input
+                type="text"
+                value={teamName}
+                onChange={(event) => setTeamName(event.target.value)}
+                maxLength={100}
+                disabled={isLoading || isSaving}
+                required
+              />
+            </label>
+          )}
+
+          {error && <div className="auth-error">{error}</div>}
+          {saved && <div className="profile-save-success">Изменения сохранены</div>}
+
+          <button
+            className="auth-submit profile-save-button"
+            type="submit"
+            disabled={isLoading || isSaving}
+          >
+            {isSaving ? "Сохранение..." : "Сохранить"}
+          </button>
+        </form>
+      </main>
+    </>
+  );
+}
