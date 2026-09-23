@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 type CompetitionResult = {
   title: string;
   place: number;
+  rating_points: number;
 };
 
 type Statistics = {
@@ -113,7 +114,9 @@ export default function StatisticsPage() {
                           key={`${result.title}-${index}`}
                         >
                           <span>{result.title}</span>
-                          <strong>{result.place} место</strong>
+                          <strong>
+                            {result.place} место · +{result.rating_points}
+                          </strong>
                         </div>
                       ))}
                   </div>
