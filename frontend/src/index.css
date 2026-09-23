@@ -830,3 +830,128 @@ nav a[aria-current="page"]::after {
     padding: 18px;
   }
 }
+
+
+.statistics-page {
+  width: min(100% - 48px, 760px);
+}
+
+.statistics-content {
+  display: grid;
+  gap: 18px;
+}
+
+.statistics-section {
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.statistics-section h2 {
+  margin: 0 0 18px;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.statistics-rating-value {
+  color: var(--text);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-rank {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.statistics-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.statistics-metrics > div {
+  display: grid;
+  gap: 6px;
+}
+
+.statistics-metrics span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.statistics-metrics strong {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-results {
+  border-top: 1px solid var(--border);
+}
+
+.statistics-result-row {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.statistics-result-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-result-row strong {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.statistics-more {
+  margin-top: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.statistics-more:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.statistics-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .statistics-page {
+    width: min(100% - 28px, 760px);
+  }
+
+  .statistics-section {
+    padding: 18px;
+  }
+
+  .statistics-metrics {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
