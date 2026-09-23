@@ -16,6 +16,12 @@ class User(Base):
         nullable=False,
         index=True,
     )
+    email: Mapped[str | None] = mapped_column(
+        String(254),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
         String(20),
