@@ -6,6 +6,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import TaskPage from "./pages/TaskPage";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
+import EditProfilePage from "./pages/EditProfilePage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -88,6 +89,7 @@ export default function App() {
       <Route path="/contests" element={<ContestsPage />} />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/tasks/:id" element={<TaskPage />} />
+      <Route path="/profile/edit" element={<EditProfilePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
