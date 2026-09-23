@@ -205,7 +205,7 @@ export default function EditProfilePage() {
             >
               <option value="member">В команде</option>
               <option value="looking">В поиске</option>
-              <option value="solo">-</option>
+              <option value="solo">Не заинтересован</option>
             </select>
           </label>
 
