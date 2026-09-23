@@ -73,6 +73,7 @@ export default function Navbar() {
 
       <NavLink to="/">Решать</NavLink>
       <NavLink to="/contests">Соревнования</NavLink>
+      <NavLink to="/rating">Рейтинг</NavLink>
       <NavLink to="/announcements">Анонсы</NavLink>
 
       <div className="nav-profile" ref={profileRef}>
