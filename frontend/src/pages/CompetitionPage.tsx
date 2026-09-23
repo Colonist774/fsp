@@ -15,7 +15,6 @@ type CompetitionParticipant = {
   team_name: string | null;
   registered_at: string;
   place: number | null;
-  result_text: string | null;
 };
 
 type CompetitionResult = {
@@ -243,7 +242,6 @@ export default function CompetitionPage() {
           },
           body: JSON.stringify({
             place: participant.place,
-            result_text: participant.result_text?.trim() || null,
           }),
         },
       );
@@ -403,7 +401,6 @@ export default function CompetitionPage() {
               <div className="competition-results-header">
                 <span>Место</span>
                 <span>Участник</span>
-                <span>Результат</span>
               </div>
 
               {results.map((result) => (
@@ -413,7 +410,6 @@ export default function CompetitionPage() {
                 >
                   <strong>{result.place ?? "—"}</strong>
                   <span>{result.username}</span>
-                  <span>{result.result_text || "—"}</span>
                 </div>
               ))}
             </div>
@@ -439,7 +435,6 @@ export default function CompetitionPage() {
                   <span>Email</span>
                   <span>Регистрация</span>
                   <span>Место</span>
-                  <span>Результат</span>
                   <span></span>
                 </div>
 
@@ -464,19 +459,6 @@ export default function CompetitionPage() {
                           place: event.target.value
                             ? Number(event.target.value)
                             : null,
-                        })
-                      }
-                    />
-
-                    <input
-                      type="text"
-                      maxLength={255}
-                      value={participant.result_text ?? ""}
-                      disabled={competition.status !== "past"}
-                      placeholder="Например: 520 баллов"
-                      onChange={(event) =>
-                        updateParticipant(participant.user_id, {
-                          result_text: event.target.value,
                         })
                       }
                     />
