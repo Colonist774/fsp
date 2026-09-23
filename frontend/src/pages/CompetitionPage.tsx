@@ -7,6 +7,24 @@ type CurrentUser = {
   role: "participant" | "organizer";
 };
 
+type CompetitionParticipant = {
+  user_id: number;
+  username: string;
+  email: string | null;
+  team_status: "member" | "looking" | "solo";
+  team_name: string | null;
+  registered_at: string;
+  place: number | null;
+  result_text: string | null;
+};
+
+type CompetitionResult = {
+  user_id: number;
+  username: string;
+  place: number | null;
+  result_text: string | null;
+};
+
 const levelLabels = {
   russia: "Чемпионат / Кубок России",
   all_russian: "Всероссийское",
@@ -31,13 +49,28 @@ function formatDateTime(dateString: string) {
   }).format(new Date(dateString));
 }
 
+function getTeamLabel(participant: CompetitionParticipant) {
+  if (participant.team_status === "member") {
+    return participant.team_name || "—";
+  }
+
+  if (participant.team_status === "looking") {
+    return "В поиске";
+  }
+
+  return "—";
+}
+
 export default function CompetitionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [competition, setCompetition] = useState<Contest | null>(null);
   const [role, setRole] = useState<CurrentUser["role"]>("participant");
+  const [participants, setParticipants] = useState<CompetitionParticipant[]>([]);
+  const [results, setResults] = useState<CompetitionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [savingUserId, setSavingUserId] = useState<number | null>(null);
 
   async function loadCompetition() {
     const token = localStorage.getItem("token");
@@ -75,9 +108,66 @@ export default function CompetitionPage() {
     }
   }
 
+  async function loadParticipants() {
+    const token = localStorage.getItem("token");
+
+    if (!token || role !== "organizer") {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${id}/participants`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data: CompetitionParticipant[] = await response.json();
+      setParticipants(data);
+    } catch {
+      return;
+    }
+  }
+
+  async function loadResults() {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${id}/results`,
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data: CompetitionResult[] = await response.json();
+      setResults(data);
+    } catch {
+      return;
+    }
+  }
+
   useEffect(() => {
     loadCompetition();
   }, [id]);
+
+  useEffect(() => {
+    if (role === "organizer") {
+      loadParticipants();
+    }
+  }, [id, role]);
+
+  useEffect(() => {
+    if (competition?.status === "past") {
+      loadResults();
+    }
+  }, [id, competition?.status]);
 
   async function registerForCompetition() {
     const token = localStorage.getItem("token");
@@ -116,6 +206,65 @@ export default function CompetitionPage() {
       setError("Не удалось подключиться к серверу");
     } finally {
       setIsRegistering(false);
+    }
+  }
+
+  function updateParticipant(
+    userId: number,
+    patch: Partial<CompetitionParticipant>,
+  ) {
+    setParticipants((current) =>
+      current.map((participant) =>
+        participant.user_id === userId
+          ? { ...participant, ...patch }
+          : participant,
+      ),
+    );
+  }
+
+  async function saveResult(participant: CompetitionParticipant) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
+    setSavingUserId(participant.user_id);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${id}/results/${participant.user_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            place: participant.place,
+            result_text: participant.result_text?.trim() || null,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось сохранить результат",
+        );
+        return;
+      }
+
+      updateParticipant(participant.user_id, data);
+      await loadResults();
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setSavingUserId(null);
     }
   }
 
@@ -215,6 +364,8 @@ export default function CompetitionPage() {
           <p>{competition.description}</p>
         </section>
 
+        {error && <div className="competition-inline-error auth-error">{error}</div>}
+
         {role === "participant" &&
           competition.status === "future" &&
           competition.registration_open && (
@@ -243,6 +394,117 @@ export default function CompetitionPage() {
               Начать
             </button>
           )}
+
+        {competition.status === "past" && results.length > 0 && (
+          <section className="competition-results-section">
+            <h2>Результаты</h2>
+
+            <div className="competition-results-table">
+              <div className="competition-results-header">
+                <span>Место</span>
+                <span>Участник</span>
+                <span>Результат</span>
+              </div>
+
+              {results.map((result) => (
+                <div
+                  className="competition-results-row"
+                  key={result.user_id}
+                >
+                  <strong>{result.place ?? "—"}</strong>
+                  <span>{result.username}</span>
+                  <span>{result.result_text || "—"}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {role === "organizer" && (
+          <section className="competition-participants-section">
+            <div className="competition-section-heading">
+              <h2>Участники</h2>
+              <span>{participants.length}</span>
+            </div>
+
+            {participants.length === 0 ? (
+              <p className="competition-section-empty">
+                Пока никто не зарегистрировался
+              </p>
+            ) : (
+              <div className="competition-participants-table">
+                <div className="competition-participants-header">
+                  <span>Участник</span>
+                  <span>Команда</span>
+                  <span>Email</span>
+                  <span>Регистрация</span>
+                  <span>Место</span>
+                  <span>Результат</span>
+                  <span></span>
+                </div>
+
+                {participants.map((participant) => (
+                  <div
+                    className="competition-participant-row"
+                    key={participant.user_id}
+                  >
+                    <strong>{participant.username}</strong>
+                    <span>{getTeamLabel(participant)}</span>
+                    <span>{participant.email || "—"}</span>
+                    <span>{formatDateTime(participant.registered_at)}</span>
+
+                    <input
+                      className="competition-result-place"
+                      type="number"
+                      min={1}
+                      value={participant.place ?? ""}
+                      disabled={competition.status !== "past"}
+                      onChange={(event) =>
+                        updateParticipant(participant.user_id, {
+                          place: event.target.value
+                            ? Number(event.target.value)
+                            : null,
+                        })
+                      }
+                    />
+
+                    <input
+                      type="text"
+                      maxLength={255}
+                      value={participant.result_text ?? ""}
+                      disabled={competition.status !== "past"}
+                      placeholder="Например: 520 баллов"
+                      onChange={(event) =>
+                        updateParticipant(participant.user_id, {
+                          result_text: event.target.value,
+                        })
+                      }
+                    />
+
+                    <button
+                      type="button"
+                      disabled={
+                        competition.status !== "past" ||
+                        savingUserId === participant.user_id
+                      }
+                      onClick={() => saveResult(participant)}
+                    >
+                      {savingUserId === participant.user_id
+                        ? "..."
+                        : "Сохранить"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {competition.status !== "past" && participants.length > 0 && (
+              <p className="competition-results-note">
+                Внести результаты можно после завершения соревнования.
+              </p>
+            )}
+          </section>
+        )}
       </main>
     </>
   );
