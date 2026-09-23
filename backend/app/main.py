@@ -15,10 +15,20 @@ from app.auth import (
 )
 from app.database import get_db
 from app.judge import judge_submission
-from app.models import Competition, CompetitionRegistration, Submission, Task, User
+from app.models import (
+    Competition,
+    CompetitionRegistration,
+    CompetitionResult,
+    Submission,
+    Task,
+    User,
+)
 from app.schemas import (
     CompetitionCreate,
+    CompetitionParticipantRead,
     CompetitionRead,
+    CompetitionResultRead,
+    CompetitionResultUpdate,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -205,13 +215,56 @@ def get_my_statistics(
         1,
     )
 
+    competitions_count = db.scalar(
+        select(func.count(CompetitionResult.id)).where(
+            CompetitionResult.user_id == current_user.id
+        )
+    ) or 0
+
+    wins_count = db.scalar(
+        select(func.count(CompetitionResult.id)).where(
+            CompetitionResult.user_id == current_user.id,
+            CompetitionResult.place == 1,
+        )
+    ) or 0
+
+    podiums_count = db.scalar(
+        select(func.count(CompetitionResult.id)).where(
+            CompetitionResult.user_id == current_user.id,
+            CompetitionResult.place.is_not(None),
+            CompetitionResult.place <= 3,
+        )
+    ) or 0
+
+    recent_rows = db.execute(
+        select(
+            Competition.title,
+            CompetitionResult.place,
+        )
+        .join(
+            CompetitionResult,
+            CompetitionResult.competition_id == Competition.id,
+        )
+        .where(
+            CompetitionResult.user_id == current_user.id,
+            CompetitionResult.place.is_not(None),
+        )
+        .order_by(Competition.end_at.desc())
+    ).all()
+
     return UserStatistics(
         rating=current_user.rating,
         rank=rank,
-        competitions=0,
-        wins=0,
-        podiums=0,
-        recent_results=[],
+        competitions=competitions_count,
+        wins=wins_count,
+        podiums=podiums_count,
+        recent_results=[
+            {
+                "title": title,
+                "place": place,
+            }
+            for title, place in recent_rows
+        ],
     )
 
 
@@ -485,6 +538,200 @@ def update_competition(
     db.refresh(competition)
 
     return build_competition_read(competition, db, current_user)
+
+
+@app.get(
+    "/api/competitions/{competition_id}/participants",
+    response_model=list[CompetitionParticipantRead],
+)
+def get_competition_participants(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    rows = db.execute(
+        select(
+            CompetitionRegistration,
+            User,
+            CompetitionResult,
+        )
+        .join(
+            User,
+            User.id == CompetitionRegistration.user_id,
+        )
+        .outerjoin(
+            CompetitionResult,
+            (CompetitionResult.competition_id == competition_id)
+            & (CompetitionResult.user_id == User.id),
+        )
+        .where(
+            CompetitionRegistration.competition_id == competition_id
+        )
+        .order_by(CompetitionRegistration.registered_at)
+    ).all()
+
+    return [
+        CompetitionParticipantRead(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            team_status=user.team_status,
+            team_name=user.team_name,
+            registered_at=registration.registered_at,
+            place=result.place if result is not None else None,
+            result_text=(
+                result.result_text if result is not None else None
+            ),
+        )
+        for registration, user, result in rows
+    ]
+
+
+@app.get(
+    "/api/competitions/{competition_id}/results",
+    response_model=list[CompetitionResultRead],
+)
+def get_competition_results(
+    competition_id: int,
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    rows = db.execute(
+        select(CompetitionResult, User)
+        .join(User, User.id == CompetitionResult.user_id)
+        .where(
+            CompetitionResult.competition_id == competition_id
+        )
+        .order_by(
+            CompetitionResult.place.asc().nulls_last(),
+            func.lower(User.username),
+        )
+    ).all()
+
+    return [
+        CompetitionResultRead(
+            user_id=user.id,
+            username=user.username,
+            place=result.place,
+            result_text=result.result_text,
+        )
+        for result, user in rows
+    ]
+
+
+@app.put(
+    "/api/competitions/{competition_id}/results/{user_id}",
+    response_model=CompetitionParticipantRead,
+)
+def save_competition_result(
+    competition_id: int,
+    user_id: int,
+    result_data: CompetitionResultUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if get_competition_status(competition) != "past":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Результаты можно вносить после завершения соревнования",
+        )
+
+    registration = db.scalar(
+        select(CompetitionRegistration).where(
+            CompetitionRegistration.competition_id == competition_id,
+            CompetitionRegistration.user_id == user_id,
+        )
+    )
+
+    if registration is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Участник не зарегистрирован на это соревнование",
+        )
+
+    user = db.get(User, user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+    result = db.scalar(
+        select(CompetitionResult).where(
+            CompetitionResult.competition_id == competition_id,
+            CompetitionResult.user_id == user_id,
+        )
+    )
+
+    result_text = (
+        result_data.result_text.strip()
+        if result_data.result_text
+        else None
+    )
+
+    if result_data.place is None and result_text is None:
+        if result is not None:
+            db.delete(result)
+            db.commit()
+
+        return CompetitionParticipantRead(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            team_status=user.team_status,
+            team_name=user.team_name,
+            registered_at=registration.registered_at,
+            place=None,
+            result_text=None,
+        )
+
+    if result is None:
+        result = CompetitionResult(
+            competition_id=competition_id,
+            user_id=user_id,
+        )
+        db.add(result)
+
+    result.place = result_data.place
+    result.result_text = result_text
+
+    db.commit()
+    db.refresh(result)
+
+    return CompetitionParticipantRead(
+        user_id=user.id,
+        username=user.username,
+        email=user.email,
+        team_status=user.team_status,
+        team_name=user.team_name,
+        registered_at=registration.registered_at,
+        place=result.place,
+        result_text=result.result_text,
+    )
 
 
 @app.post(
