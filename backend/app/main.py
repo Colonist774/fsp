@@ -14,6 +14,7 @@ from app.database import get_db
 from app.judge import judge_submission
 from app.models import Submission, Task, User
 from app.schemas import (
+    RankingEntry,
     SubmissionCreate,
     SubmissionRead,
     TaskRead,
@@ -164,26 +165,62 @@ def get_me(
     return build_user_me(current_user, db)
 
 
+def get_ranked_participants(db: Session) -> list[User]:
+    statement = (
+        select(User)
+        .where(User.role == "participant")
+        .order_by(
+            User.rating.desc(),
+            func.lower(User.username),
+            User.id,
+        )
+    )
+    return list(db.scalars(statement).all())
+
+
 @app.get("/api/me/statistics", response_model=UserStatistics)
 def get_my_statistics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    higher_rated_users = db.scalar(
-        select(func.count(User.id)).where(
-            User.role == "participant",
-            User.rating > current_user.rating,
-        )
-    ) or 0
+    participants = get_ranked_participants(db)
+    rank = next(
+        (
+            index
+            for index, participant in enumerate(participants, start=1)
+            if participant.id == current_user.id
+        ),
+        1,
+    )
 
     return UserStatistics(
         rating=current_user.rating,
-        rank=higher_rated_users + 1,
+        rank=rank,
         competitions=0,
         wins=0,
         podiums=0,
         recent_results=[],
     )
+
+
+@app.get("/api/rankings", response_model=list[RankingEntry])
+def get_rankings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    participants = get_ranked_participants(db)
+
+    return [
+        RankingEntry(
+            rank=index,
+            user_id=user.id,
+            username=user.username,
+            team_status=user.team_status,
+            team_name=user.team_name,
+            rating=user.rating,
+        )
+        for index, user in enumerate(participants, start=1)
+    ]
 
 
 @app.patch("/api/me/profile", response_model=UserMe)
