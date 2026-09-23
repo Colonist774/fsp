@@ -1416,7 +1416,7 @@ nav a[aria-current="page"]::after {
 .competition-results-header,
 .competition-results-row {
   display: grid;
-  grid-template-columns: 90px minmax(0, 1fr);
+  grid-template-columns: 90px minmax(0, 1fr) 110px;
   align-items: center;
   gap: 16px;
   min-height: 46px;
@@ -1569,4 +1569,12 @@ nav a[aria-current="page"]::after {
   .competition-results-row {
     min-width: 420px;
   }
+}
+
+
+.competition-rating-points {
+  justify-self: end;
+  color: var(--success);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
