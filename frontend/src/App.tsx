@@ -8,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import StatisticsPage from "./pages/StatisticsPage";
+import RatingPage from "./pages/RatingPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -88,6 +89,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<SolvePage />} />
       <Route path="/contests" element={<ContestsPage />} />
+      <Route path="/rating" element={<RatingPage />} />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/tasks/:id" element={<TaskPage />} />
       <Route path="/profile/edit" element={<EditProfilePage />} />
