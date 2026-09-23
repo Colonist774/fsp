@@ -7,6 +7,44 @@ from pydantic import BaseModel, ConfigDict, Field
 Language = Literal["python", "javascript", "cpp", "java"]
 UserRole = Literal["participant", "organizer"]
 TeamStatus = Literal["member", "looking", "solo"]
+CompetitionLevel = Literal[
+    "russia",
+    "all_russian",
+    "interregional",
+    "dagestan_championship",
+    "regional",
+]
+CompetitionFormat = Literal["online", "offline", "hybrid"]
+CompetitionConductMode = Literal["platform", "external"]
+CompetitionStatus = Literal["future", "active", "past"]
+
+
+class CompetitionBase(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    description: str = Field(min_length=1, max_length=5000)
+    level: CompetitionLevel
+    discipline: str = Field(min_length=2, max_length=100)
+    format: CompetitionFormat
+    conduct_mode: CompetitionConductMode
+    venue: str | None = Field(default=None, max_length=255)
+    start_at: datetime
+    end_at: datetime
+    registration_deadline: datetime
+    publish_tasks_after_finish: bool = False
+
+
+class CompetitionCreate(CompetitionBase):
+    pass
+
+
+class CompetitionRead(CompetitionBase):
+    id: int
+    status: CompetitionStatus
+    registration_open: bool
+    is_registered: bool = False
+    registered_count: int = 0
+    created_by_user_id: int | None
+    created_at: datetime
 
 
 class TaskRead(BaseModel):
