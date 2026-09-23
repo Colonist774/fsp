@@ -1,46 +1,57 @@
-import type { Contest } from "../types/contest";
-import type { ContestStatus } from "../types/contest";
+import { useNavigate } from "react-router-dom";
+import type { Contest, ContestStatus } from "../types/contest";
 
 type ContestCardProps = {
-    contest: Contest,
-    status: ContestStatus,
-}
+  contest: Contest;
+  status: ContestStatus;
+};
 
 function formatDate(dateString: string) {
-    const date = new Date(dateString);
-
-    return [
-        String(date.getDate()).padStart(2, "0"),
-        String(date.getMonth() + 1).padStart(2, "0"),
-        date.getFullYear(),
-    ].join(".");
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateString));
 }
 
 export default function ContestCard({ contest, status }: ContestCardProps) {
-    if (status === "active") {
-        return (
-            <div className="contest-card">
-                <span className="contest-title">{contest.title}</span>
-                <span>Активно до: {formatDate(contest.endAt)}</span>
-                <button>Перейти</button>
-            </div>
-        )
-    } else if (status === "future") {
-        return (
-            <div className="contest-card">
-                <span className="contest-title">{contest.title}</span>
-                <span>Старт: {formatDate(contest.startAt)}</span>
-            </div>
-        )
-    } else {
-        return (
-            <div className="contest-card">
-                <span className="contest-title">{contest.title}</span>
-                <span>Завершено: {formatDate(contest.endAt)}</span>
-                <button>Результаты</button>
-            </div>
-        )
-    }
+  const navigate = useNavigate();
 
+  function openCompetition() {
+    navigate(`/contests/${contest.id}`);
+  }
 
+  if (status === "active") {
+    return (
+      <div className="contest-card">
+        <span className="contest-title">{contest.title}</span>
+        <span>Активно до: {formatDate(contest.end_at)}</span>
+        <button type="button" onClick={openCompetition}>
+          Перейти
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "future") {
+    return (
+      <div className="contest-card">
+        <span className="contest-title">{contest.title}</span>
+        <span>Старт: {formatDate(contest.start_at)}</span>
+        <button type="button" onClick={openCompetition}>
+          Подробнее
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="contest-card">
+      <span className="contest-title">{contest.title}</span>
+      <span>Завершено: {formatDate(contest.end_at)}</span>
+      <button type="button" onClick={openCompetition}>
+        Результаты
+      </button>
+    </div>
+  );
 }
