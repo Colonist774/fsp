@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, select
@@ -8,12 +10,15 @@ from app.auth import (
     get_current_user,
     get_optional_current_user,
     hash_password,
+    require_organizer,
     verify_password,
 )
 from app.database import get_db
 from app.judge import judge_submission
-from app.models import Submission, Task, User
+from app.models import Competition, CompetitionRegistration, Submission, Task, User
 from app.schemas import (
+    CompetitionCreate,
+    CompetitionRead,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -310,6 +315,229 @@ def get_solved_task_ids(
     )
 
     return set(db.scalars(statement).all())
+
+
+
+def get_competition_status(
+    competition: Competition,
+    now: datetime | None = None,
+) -> str:
+    current_time = now or datetime.now(timezone.utc)
+
+    if current_time < competition.start_at:
+        return "future"
+
+    if current_time > competition.end_at:
+        return "past"
+
+    return "active"
+
+
+def build_competition_read(
+    competition: Competition,
+    db: Session,
+    current_user: User | None = None,
+) -> CompetitionRead:
+    current_time = datetime.now(timezone.utc)
+    competition_status = get_competition_status(
+        competition,
+        current_time,
+    )
+
+    registered_count = db.scalar(
+        select(func.count(CompetitionRegistration.id)).where(
+            CompetitionRegistration.competition_id == competition.id
+        )
+    ) or 0
+
+    is_registered = False
+
+    if current_user is not None:
+        registration = db.scalar(
+            select(CompetitionRegistration).where(
+                CompetitionRegistration.competition_id == competition.id,
+                CompetitionRegistration.user_id == current_user.id,
+            )
+        )
+        is_registered = registration is not None
+
+    return CompetitionRead(
+        id=competition.id,
+        title=competition.title,
+        description=competition.description,
+        level=competition.level,
+        discipline=competition.discipline,
+        format=competition.format,
+        conduct_mode=competition.conduct_mode,
+        venue=competition.venue,
+        start_at=competition.start_at,
+        end_at=competition.end_at,
+        registration_deadline=competition.registration_deadline,
+        publish_tasks_after_finish=competition.publish_tasks_after_finish,
+        status=competition_status,
+        registration_open=(
+            competition_status == "future"
+            and current_time <= competition.registration_deadline
+        ),
+        is_registered=is_registered,
+        registered_count=registered_count,
+        created_by_user_id=competition.created_by_user_id,
+        created_at=competition.created_at,
+    )
+
+
+def validate_competition_data(
+    competition_data: CompetitionCreate,
+) -> None:
+    if competition_data.end_at <= competition_data.start_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Время завершения должно быть позже времени начала",
+        )
+
+    if competition_data.registration_deadline > competition_data.start_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Регистрация должна завершиться не позже начала соревнования",
+        )
+
+
+@app.get("/api/competitions", response_model=list[CompetitionRead])
+def get_competitions(
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
+    competitions = db.scalars(
+        select(Competition).order_by(Competition.start_at)
+    ).all()
+
+    return [
+        build_competition_read(competition, db, current_user)
+        for competition in competitions
+    ]
+
+
+@app.get("/api/competitions/{competition_id}", response_model=CompetitionRead)
+def get_competition(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    return build_competition_read(competition, db, current_user)
+
+
+@app.post(
+    "/api/competitions",
+    response_model=CompetitionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_competition(
+    competition_data: CompetitionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    validate_competition_data(competition_data)
+
+    competition = Competition(
+        **competition_data.model_dump(),
+        created_by_user_id=current_user.id,
+    )
+
+    db.add(competition)
+    db.commit()
+    db.refresh(competition)
+
+    return build_competition_read(competition, db, current_user)
+
+
+@app.patch(
+    "/api/competitions/{competition_id}",
+    response_model=CompetitionRead,
+)
+def update_competition(
+    competition_id: int,
+    competition_data: CompetitionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    validate_competition_data(competition_data)
+
+    for field, value in competition_data.model_dump().items():
+        setattr(competition, field, value)
+
+    db.commit()
+    db.refresh(competition)
+
+    return build_competition_read(competition, db, current_user)
+
+
+@app.post(
+    "/api/competitions/{competition_id}/register",
+    response_model=CompetitionRead,
+)
+def register_for_competition(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Организатор не может регистрироваться как участник",
+        )
+
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    competition_view = build_competition_read(
+        competition,
+        db,
+        current_user,
+    )
+
+    if competition_view.is_registered:
+        return competition_view
+
+    if not competition_view.registration_open:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Регистрация на соревнование закрыта",
+        )
+
+    registration = CompetitionRegistration(
+        competition_id=competition.id,
+        user_id=current_user.id,
+    )
+    db.add(registration)
+    db.commit()
+
+    return build_competition_read(
+        competition,
+        db,
+        current_user,
+    )
+
 
 
 @app.get("/api/tasks", response_model=list[TaskRead])
