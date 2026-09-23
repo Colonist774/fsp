@@ -587,9 +587,6 @@ def get_competition_participants(
             team_name=user.team_name,
             registered_at=registration.registered_at,
             place=result.place if result is not None else None,
-            result_text=(
-                result.result_text if result is not None else None
-            ),
         )
         for registration, user, result in rows
     ]
@@ -615,7 +612,8 @@ def get_competition_results(
         select(CompetitionResult, User)
         .join(User, User.id == CompetitionResult.user_id)
         .where(
-            CompetitionResult.competition_id == competition_id
+            CompetitionResult.competition_id == competition_id,
+            CompetitionResult.place.is_not(None),
         )
         .order_by(
             CompetitionResult.place.asc().nulls_last(),
@@ -628,7 +626,6 @@ def get_competition_results(
             user_id=user.id,
             username=user.username,
             place=result.place,
-            result_text=result.result_text,
         )
         for result, user in rows
     ]
@@ -687,13 +684,7 @@ def save_competition_result(
         )
     )
 
-    result_text = (
-        result_data.result_text.strip()
-        if result_data.result_text
-        else None
-    )
-
-    if result_data.place is None and result_text is None:
+    if result_data.place is None:
         if result is not None:
             db.delete(result)
             db.commit()
@@ -706,7 +697,6 @@ def save_competition_result(
             team_name=user.team_name,
             registered_at=registration.registered_at,
             place=None,
-            result_text=None,
         )
 
     if result is None:
@@ -717,7 +707,6 @@ def save_competition_result(
         db.add(result)
 
     result.place = result_data.place
-    result.result_text = result_text
 
     db.commit()
     db.refresh(result)
@@ -730,7 +719,6 @@ def save_competition_result(
         team_name=user.team_name,
         registered_at=registration.registered_at,
         place=result.place,
-        result_text=result.result_text,
     )
 
 
