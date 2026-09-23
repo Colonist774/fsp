@@ -21,7 +21,6 @@ type CompetitionResult = {
   user_id: number;
   username: string;
   place: number | null;
-  result_text: string | null;
 };
 
 const levelLabels = {
