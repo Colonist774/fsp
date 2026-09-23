@@ -22,6 +22,14 @@ class User(Base):
         nullable=True,
         index=True,
     )
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    team_status: Mapped[str] = mapped_column(
+        String(20),
+        default="solo",
+        server_default="solo",
+        nullable=False,
+    )
+    team_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
         String(20),
