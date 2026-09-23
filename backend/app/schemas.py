@@ -47,6 +47,29 @@ class CompetitionRead(CompetitionBase):
     created_at: datetime
 
 
+class CompetitionParticipantRead(BaseModel):
+    user_id: int
+    username: str
+    email: str | None
+    team_status: TeamStatus
+    team_name: str | None
+    registered_at: datetime
+    place: int | None = None
+    result_text: str | None = None
+
+
+class CompetitionResultUpdate(BaseModel):
+    place: int | None = Field(default=None, ge=1)
+    result_text: str | None = Field(default=None, max_length=255)
+
+
+class CompetitionResultRead(BaseModel):
+    user_id: int
+    username: str
+    place: int | None
+    result_text: str | None
+
+
 class TaskRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
