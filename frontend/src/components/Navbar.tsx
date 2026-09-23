@@ -107,6 +107,16 @@ export default function Navbar() {
             >
               Моя статистика
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem("token");
+                window.location.href = "/login";
+              }}
+            >
+              Выйти
+            </button>
           </div>
         )}
       </div>
