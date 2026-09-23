@@ -6,12 +6,22 @@ type ContestCardProps = {
     status: ContestStatus,
 }
 
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+
+    return [
+        String(date.getDate()).padStart(2, "0"),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        date.getFullYear(),
+    ].join(".");
+}
+
 export default function ContestCard({ contest, status }: ContestCardProps) {
     if (status === "active") {
         return (
             <div className="contest-card">
                 <span className="contest-title">{contest.title}</span>
-                <span>Активно до: {contest.endAt}</span>
+                <span>Активно до: {formatDate(contest.endAt)}</span>
                 <button>Перейти</button>
             </div>
         )
@@ -19,14 +29,14 @@ export default function ContestCard({ contest, status }: ContestCardProps) {
         return (
             <div className="contest-card">
                 <span className="contest-title">{contest.title}</span>
-                <span>Старт: {contest.startAt}</span>
+                <span>Старт: {formatDate(contest.startAt)}</span>
             </div>
         )
     } else {
         return (
             <div className="contest-card">
                 <span className="contest-title">{contest.title}</span>
-                <span>Завершено: {contest.endAt}</span>
+                <span>Завершено: {formatDate(contest.endAt)}</span>
                 <button>Результаты</button>
             </div>
         )
