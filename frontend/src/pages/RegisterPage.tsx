@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +18,15 @@ export default function RegisterPage() {
     event.preventDefault();
 
     const normalizedUsername = username.trim();
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (normalizedUsername.length < 3) {
       setError("Имя пользователя должно содержать минимум 3 символа");
+      return;
+    }
+
+    if (!normalizedEmail) {
+      setError("Введите email");
       return;
     }
 
@@ -41,6 +48,7 @@ export default function RegisterPage() {
           },
           body: JSON.stringify({
             username: normalizedUsername,
+            email: normalizedEmail,
             password,
           }),
         },
@@ -84,6 +92,22 @@ export default function RegisterPage() {
               disabled={isLoading}
               required
             />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              maxLength={254}
+              disabled={isLoading}
+              required
+            />
+            <small className="auth-help">
+              email необходим для связи при проведении соревнований, его видит только администрация ФСП
+            </small>
           </label>
 
           <label>
