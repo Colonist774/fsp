@@ -65,6 +65,7 @@ class CompetitionResultRead(BaseModel):
     user_id: int
     username: str
     place: int | None
+    rating_points: int
 
 
 class TaskRead(BaseModel):
@@ -146,6 +147,7 @@ class UserProfileUpdate(BaseModel):
 class CompetitionResultSummary(BaseModel):
     title: str
     place: int
+    rating_points: int
 
 
 class UserStatistics(BaseModel):
