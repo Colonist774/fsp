@@ -97,7 +97,15 @@ export default function Navbar() {
             >
               Редактировать профиль
             </button>
-            <button type="button">Моя статистика</button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/profile/stats");
+              }}
+            >
+              Моя статистика
+            </button>
           </div>
         )}
       </div>
