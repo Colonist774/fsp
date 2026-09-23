@@ -21,13 +21,14 @@ type CompetitionResult = {
   user_id: number;
   username: string;
   place: number | null;
+  rating_points: number;
 };
 
 const levelLabels = {
   russia: "Чемпионат / Кубок России",
   all_russian: "Всероссийское",
   interregional: "Межрегиональное",
-  dagestan_championship: "Чемпионат / Кубок Дагестана",
+  dagestan_championship: "Чемпионат / Кубок Региона",
   regional: "Региональное",
 };
 
@@ -400,6 +401,7 @@ export default function CompetitionPage() {
               <div className="competition-results-header">
                 <span>Место</span>
                 <span>Участник</span>
+                <span>Рейтинг</span>
               </div>
 
               {results.map((result) => (
@@ -409,6 +411,9 @@ export default function CompetitionPage() {
                 >
                   <strong>{result.place ?? "—"}</strong>
                   <span>{result.username}</span>
+                  <span className="competition-rating-points">
+                    +{result.rating_points}
+                  </span>
                 </div>
               ))}
             </div>
