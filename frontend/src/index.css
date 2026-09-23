@@ -955,3 +955,186 @@ nav a[aria-current="page"]::after {
     gap: 16px;
   }
 }
+
+
+.rating-page {
+  width: min(100% - 48px, 920px);
+}
+
+.rating-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "second first third";
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.rating-podium-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.podium-first {
+  grid-area: first;
+  min-height: 190px;
+  padding-top: 28px;
+  border-color: #6f5a23;
+}
+
+.podium-second {
+  grid-area: second;
+  min-height: 162px;
+}
+
+.podium-third {
+  grid-area: third;
+  min-height: 150px;
+}
+
+.rating-podium-rank {
+  margin-bottom: 12px;
+  color: var(--text);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.rank-first {
+  color: #d4af37;
+}
+
+.rank-second {
+  color: #c0c0c0;
+}
+
+.rank-third {
+  color: #cd7f32;
+}
+
+.rating-podium-name {
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.rating-podium-team {
+  min-height: 20px;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.rating-podium-score {
+  margin-top: 16px;
+  color: var(--text);
+  font-size: 23px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.rating-table-header,
+.rating-table-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1.4fr) minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+}
+
+.rating-table-header {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rating-table-row {
+  min-height: 56px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.rating-table-row:last-child {
+  border-bottom: 0;
+}
+
+.rating-place {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.rating-username {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.rating-team {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rating-table-row strong {
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-empty {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .rating-page {
+    width: min(100% - 28px, 920px);
+  }
+
+  .rating-podium {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "first"
+      "second"
+      "third";
+    align-items: stretch;
+  }
+
+  .podium-first,
+  .podium-second,
+  .podium-third {
+    min-height: 0;
+  }
+
+  .rating-table {
+    overflow-x: auto;
+  }
+
+  .rating-table-header,
+  .rating-table-row {
+    min-width: 650px;
+  }
+}
