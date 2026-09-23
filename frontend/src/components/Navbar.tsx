@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 type CurrentUser = {
   username: string;
 };
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -40,6 +41,11 @@ export default function Navbar() {
     }
 
     loadCurrentUser();
+    window.addEventListener("profile-updated", loadCurrentUser);
+
+    return () => {
+      window.removeEventListener("profile-updated", loadCurrentUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -82,7 +88,15 @@ export default function Navbar() {
 
         {isMenuOpen && (
           <div className="nav-profile-menu">
-            <button type="button">Настройки</button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/profile/edit");
+              }}
+            >
+              Редактировать профиль
+            </button>
             <button type="button">Моя статистика</button>
           </div>
         )}
