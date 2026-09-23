@@ -80,16 +80,17 @@ export default function StatisticsPage() {
 
               <div className="statistics-metrics">
                 <div>
-                  <span>Участий</span>
                   <strong>{statistics.competitions}</strong>
+                  <span>Участий</span>
                 </div>
                 <div>
-                  <span>Побед</span>
                   <strong>{statistics.wins}</strong>
+                  <span>Побед</span>
+
                 </div>
                 <div>
-                  <span>Призовых мест</span>
                   <strong>{statistics.podiums}</strong>
+                  <span>Призовых мест</span>
                 </div>
               </div>
             </section>
