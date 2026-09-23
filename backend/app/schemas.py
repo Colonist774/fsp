@@ -99,6 +99,15 @@ class UserStatistics(BaseModel):
     recent_results: list[CompetitionResultSummary]
 
 
+class RankingEntry(BaseModel):
+    rank: int
+    user_id: int
+    username: str
+    team_status: TeamStatus
+    team_name: str | None
+    rating: int
+
+
 class TokenRead(BaseModel):
     access_token: str
     token_type: str = "bearer"
