@@ -256,7 +256,7 @@ export default function CompetitionFormPage() {
                     Межрегиональное
                   </option>
                   <option value="dagestan_championship">
-                    Чемпионат / Кубок Дагестана
+                    Чемпионат / Кубок Региона
                   </option>
                   <option value="regional">
                     Региональное
