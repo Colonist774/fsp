@@ -105,10 +105,14 @@ nav a[aria-current="page"]::after {
   background: var(--accent);
 }
 
+.nav-profile {
+  position: relative;
+  margin-left: auto;
+}
+
 .nav-avatar {
   width: 34px;
   height: 34px;
-  margin-left: auto;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
@@ -120,6 +124,39 @@ nav a[aria-current="page"]::after {
 
 .nav-avatar:hover {
   border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.nav-profile-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 164px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111418;
+}
+
+.nav-profile-menu button {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nav-profile-menu button:last-child {
+  border-bottom: 0;
+}
+
+.nav-profile-menu button:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
@@ -634,6 +671,12 @@ nav a[aria-current="page"]::after {
   color: #c7cdd5;
   font-size: 13px;
   font-weight: 500;
+}
+
+.auth-help {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .auth-form input {
