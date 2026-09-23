@@ -743,3 +743,90 @@ nav a[aria-current="page"]::after {
 .auth-switch a:hover {
   text-decoration: underline;
 }
+
+
+.profile-edit-page {
+  width: min(100% - 48px, 720px);
+}
+
+.profile-edit-form {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.profile-edit-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-edit-form label > span {
+  color: #c7cdd5;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.profile-edit-form input,
+.profile-edit-form textarea,
+.profile-edit-form select {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.profile-edit-form input,
+.profile-edit-form select {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.profile-edit-form textarea {
+  min-height: 150px;
+  padding: 11px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.profile-edit-form input:focus,
+.profile-edit-form textarea:focus,
+.profile-edit-form select:focus {
+  border-color: var(--accent);
+}
+
+.profile-edit-form input:disabled,
+.profile-edit-form textarea:disabled,
+.profile-edit-form select:disabled {
+  opacity: 0.65;
+}
+
+.profile-edit-form textarea::placeholder {
+  color: #6e7681;
+}
+
+.profile-save-button {
+  width: max-content;
+  min-width: 110px;
+  padding: 0 18px;
+}
+
+.profile-save-success {
+  color: var(--success);
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .profile-edit-page {
+    width: min(100% - 28px, 720px);
+  }
+
+  .profile-edit-form {
+    padding: 18px;
+  }
+}
