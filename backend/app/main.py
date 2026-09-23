@@ -23,6 +23,7 @@ from app.schemas import (
     UserProfileUpdate,
     UserRead,
     UserRegister,
+    UserStatistics,
 )
 
 
@@ -161,6 +162,28 @@ def get_me(
     db: Session = Depends(get_db),
 ):
     return build_user_me(current_user, db)
+
+
+@app.get("/api/me/statistics", response_model=UserStatistics)
+def get_my_statistics(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    higher_rated_users = db.scalar(
+        select(func.count(User.id)).where(
+            User.role == "participant",
+            User.rating > current_user.rating,
+        )
+    ) or 0
+
+    return UserStatistics(
+        rating=current_user.rating,
+        rank=higher_rated_users + 1,
+        competitions=0,
+        wins=0,
+        podiums=0,
+        recent_results=[],
+    )
 
 
 @app.patch("/api/me/profile", response_model=UserMe)
