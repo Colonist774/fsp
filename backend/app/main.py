@@ -180,6 +180,114 @@ def get_me(
     return build_user_me(current_user, db)
 
 
+
+RATING_POINTS_BY_LEVEL: dict[str, dict[int, int]] = {
+    "russia": {
+        1: 500,
+        2: 400,
+        3: 300,
+        4: 200,
+        5: 200,
+        6: 100,
+        7: 100,
+        8: 100,
+        9: 100,
+        10: 100,
+    },
+    "all_russian": {
+        1: 500,
+        2: 400,
+        3: 300,
+        4: 200,
+        5: 200,
+        6: 100,
+        7: 100,
+        8: 100,
+        9: 100,
+        10: 100,
+    },
+    "interregional": {
+        1: 300,
+        2: 250,
+        3: 150,
+        4: 100,
+        5: 100,
+        6: 50,
+        7: 50,
+        8: 50,
+        9: 50,
+        10: 50,
+    },
+    "dagestan_championship": {
+        1: 200,
+        2: 150,
+        3: 100,
+        4: 50,
+        5: 50,
+        6: 25,
+        7: 25,
+        8: 25,
+        9: 25,
+        10: 25,
+    },
+    "regional": {
+        1: 200,
+        2: 150,
+        3: 100,
+        4: 50,
+        5: 50,
+        6: 25,
+        7: 25,
+        8: 25,
+        9: 25,
+        10: 25,
+    },
+}
+
+
+def get_rating_points(
+    competition_level: str,
+    place: int | None,
+) -> int:
+    if place is None:
+        return 0
+
+    return RATING_POINTS_BY_LEVEL.get(
+        competition_level,
+        {},
+    ).get(place, 0)
+
+
+def recalculate_user_rating(
+    db: Session,
+    user_id: int,
+) -> None:
+    user = db.get(User, user_id)
+
+    if user is None:
+        return
+
+    rows = db.execute(
+        select(
+            Competition.level,
+            CompetitionResult.place,
+        )
+        .join(
+            Competition,
+            Competition.id == CompetitionResult.competition_id,
+        )
+        .where(
+            CompetitionResult.user_id == user_id,
+            CompetitionResult.place.is_not(None),
+        )
+    ).all()
+
+    user.rating = sum(
+        get_rating_points(level, place)
+        for level, place in rows
+    )
+
+
 def get_ranked_participants(
     db: Session,
     limit: int | None = None,
@@ -239,6 +347,7 @@ def get_my_statistics(
     recent_rows = db.execute(
         select(
             Competition.title,
+            Competition.level,
             CompetitionResult.place,
         )
         .join(
@@ -262,8 +371,9 @@ def get_my_statistics(
             {
                 "title": title,
                 "place": place,
+                "rating_points": get_rating_points(level, place),
             }
-            for title, place in recent_rows
+            for title, level, place in recent_rows
         ],
     )
 
@@ -534,6 +644,17 @@ def update_competition(
     for field, value in competition_data.model_dump().items():
         setattr(competition, field, value)
 
+    db.flush()
+
+    result_user_ids = db.scalars(
+        select(CompetitionResult.user_id).where(
+            CompetitionResult.competition_id == competition_id
+        )
+    ).all()
+
+    for user_id in set(result_user_ids):
+        recalculate_user_rating(db, user_id)
+
     db.commit()
     db.refresh(competition)
 
@@ -626,6 +747,10 @@ def get_competition_results(
             user_id=user.id,
             username=user.username,
             place=result.place,
+            rating_points=get_rating_points(
+                competition.level,
+                result.place,
+            ),
         )
         for result, user in rows
     ]
@@ -687,6 +812,8 @@ def save_competition_result(
     if result_data.place is None:
         if result is not None:
             db.delete(result)
+            db.flush()
+            recalculate_user_rating(db, user_id)
             db.commit()
 
         return CompetitionParticipantRead(
@@ -708,6 +835,8 @@ def save_competition_result(
 
     result.place = result_data.place
 
+    db.flush()
+    recalculate_user_rating(db, user_id)
     db.commit()
     db.refresh(result)
 
