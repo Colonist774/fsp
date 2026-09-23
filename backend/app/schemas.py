@@ -85,6 +85,20 @@ class UserProfileUpdate(BaseModel):
     team_name: str | None = Field(default=None, max_length=100)
 
 
+class CompetitionResultSummary(BaseModel):
+    title: str
+    place: int
+
+
+class UserStatistics(BaseModel):
+    rating: int
+    rank: int
+    competitions: int
+    wins: int
+    podiums: int
+    recent_results: list[CompetitionResultSummary]
+
+
 class TokenRead(BaseModel):
     access_token: str
     token_type: str = "bearer"
