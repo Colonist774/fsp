@@ -165,7 +165,10 @@ def get_me(
     return build_user_me(current_user, db)
 
 
-def get_ranked_participants(db: Session) -> list[User]:
+def get_ranked_participants(
+    db: Session,
+    limit: int | None = None,
+) -> list[User]:
     statement = (
         select(User)
         .where(User.role == "participant")
@@ -175,6 +178,10 @@ def get_ranked_participants(db: Session) -> list[User]:
             User.id,
         )
     )
+
+    if limit is not None:
+        statement = statement.limit(limit)
+
     return list(db.scalars(statement).all())
 
 
@@ -208,7 +215,7 @@ def get_rankings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    participants = get_ranked_participants(db)
+    participants = get_ranked_participants(db, limit=100)
 
     return [
         RankingEntry(
