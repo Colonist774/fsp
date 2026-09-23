@@ -401,7 +401,7 @@ export default function CompetitionPage() {
               <div className="competition-results-header">
                 <span>Место</span>
                 <span>Участник</span>
-                <span>Рейтинг</span>
+                <span className="competition-rating-points-exampl">Рейтинг</span>
               </div>
 
               {results.map((result) => (
