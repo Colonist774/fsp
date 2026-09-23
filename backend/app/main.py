@@ -20,6 +20,7 @@ from app.schemas import (
     TokenRead,
     UserLogin,
     UserMe,
+    UserProfileUpdate,
     UserRead,
     UserRegister,
 )
@@ -122,33 +123,107 @@ def login(
     )
 
 
-@app.get("/api/me", response_model=UserMe)
-def get_me(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
+def build_user_me(
+    user: User,
+    db: Session,
+) -> UserMe:
     submissions_count = db.scalar(
         select(func.count(Submission.id)).where(
-            Submission.user_id == current_user.id
+            Submission.user_id == user.id
         )
     ) or 0
 
     solved_tasks_count = db.scalar(
         select(func.count(func.distinct(Submission.task_id))).where(
-            Submission.user_id == current_user.id,
+            Submission.user_id == user.id,
             Submission.status == "accepted",
         )
     ) or 0
 
     return UserMe(
-        id=current_user.id,
-        username=current_user.username,
-        role=current_user.role,
-        rating=current_user.rating,
-        created_at=current_user.created_at,
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        bio=user.bio,
+        team_status=user.team_status,
+        team_name=user.team_name,
+        role=user.role,
+        rating=user.rating,
+        created_at=user.created_at,
         solved_tasks=solved_tasks_count,
         submissions=submissions_count,
     )
+
+
+@app.get("/api/me", response_model=UserMe)
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return build_user_me(current_user, db)
+
+
+@app.patch("/api/me/profile", response_model=UserMe)
+def update_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    username = profile_data.username.strip()
+    email = profile_data.email.strip().lower()
+    bio = profile_data.bio.strip() if profile_data.bio else None
+    team_name = profile_data.team_name.strip() if profile_data.team_name else None
+
+    if len(username) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Имя пользователя должно содержать минимум 3 символа",
+        )
+
+    existing_user = db.scalar(
+        select(User).where(
+            User.username == username,
+            User.id != current_user.id,
+        )
+    )
+
+    if existing_user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь с таким именем уже существует",
+        )
+
+    existing_email = db.scalar(
+        select(User).where(
+            User.email == email,
+            User.id != current_user.id,
+        )
+    )
+
+    if existing_email is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь с таким email уже существует",
+        )
+
+    if profile_data.team_status == "member" and not team_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Укажите название команды",
+        )
+
+    current_user.username = username
+    current_user.email = email
+    current_user.bio = bio
+    current_user.team_status = profile_data.team_status
+    current_user.team_name = (
+        team_name if profile_data.team_status == "member" else None
+    )
+
+    db.commit()
+    db.refresh(current_user)
+
+    return build_user_me(current_user, db)
 
 
 def get_solved_task_ids(
