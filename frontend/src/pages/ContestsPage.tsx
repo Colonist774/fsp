@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import ContestCard from "../components/ContestCard";
 import type { Contest, ContestStatus } from "../types/contest";
 
-type SidebarButtons = "active" | "past" | "future" | "top";
+type SidebarButtons = "active" | "past" | "future";
 
 export const contests: Contest[] = [
   {
@@ -57,12 +57,9 @@ export default function ContestsPage() {
   const [selectedTab, setSelectedTab] = useState<SidebarButtons>("active");
   const now = new Date();
 
-  const visibleContests =
-    selectedTab === "top"
-      ? []
-      : contests.filter(
-          (contest) => getContestStatus(contest, now) === selectedTab,
-        );
+  const visibleContests = contests.filter(
+    (contest) => getContestStatus(contest, now) === selectedTab,
+  );
 
   return (
     <>
@@ -89,13 +86,6 @@ export default function ContestsPage() {
             onClick={() => setSelectedTab("future")}
           >
             Будущие
-          </button>
-
-          <button
-            className={selectedTab === "top" ? "is-active" : ""}
-            onClick={() => setSelectedTab("top")}
-          >
-            Таблица лидеров
           </button>
         </aside>
 
