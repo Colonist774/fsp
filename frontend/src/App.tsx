@@ -87,8 +87,8 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<SolvePage />} />
-      <Route path="/contests" element={<ContestsPage />} />
+      <Route path="/" element={<ContestsPage />} />
+      <Route path="/solve" element={<SolvePage />} />
       <Route path="/rating" element={<RatingPage />} />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/tasks/:id" element={<TaskPage />} />

@@ -187,6 +187,7 @@ export default function EditProfilePage() {
               disabled={isLoading || isSaving}
               required
             />
+            <small className="profile-edit-email-about">email необходим для связи при проведении соревнований, его видит только администрация ФСП</small>
           </label>
 
           <label>

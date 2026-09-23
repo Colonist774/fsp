@@ -758,6 +758,12 @@ nav a[aria-current="page"]::after {
   background: var(--surface);
 }
 
+.profile-edit-email-about {
+  color: #6e7681;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .profile-edit-form label {
   display: grid;
   gap: 8px;

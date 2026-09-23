@@ -71,9 +71,9 @@ export default function Navbar() {
     <nav>
       <strong>ФСП</strong>
 
-      <NavLink to="/">Решать</NavLink>
-      <NavLink to="/contests">Соревнования</NavLink>
+      <NavLink to="/">Соревнования</NavLink>
       <NavLink to="/rating">Рейтинг</NavLink>
+      <NavLink to="/solve">Сборник задач</NavLink>
       <NavLink to="/announcements">Анонсы</NavLink>
 
       <div className="nav-profile" ref={profileRef}>
