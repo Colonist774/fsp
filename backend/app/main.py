@@ -30,6 +30,7 @@ from app.schemas import (
     CompetitionResultRead,
     CompetitionResultUpdate,
     AthleteProfileRead,
+    AthleteQualificationUpdate,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -165,8 +166,6 @@ def build_user_me(
         bio=user.bio,
         full_name=user.full_name,
         hide_full_name=user.hide_full_name,
-        locality=user.locality,
-        education_org=user.education_org,
         sports_disciplines=user.sports_disciplines,
         sports_qualification=user.sports_qualification,
         team_status=user.team_status,
@@ -466,8 +465,6 @@ def get_athlete_profile(
         username=athlete.username,
         full_name=athlete.full_name,
         hide_full_name=athlete.hide_full_name,
-        locality=athlete.locality,
-        education_org=athlete.education_org,
         sports_disciplines=athlete.sports_disciplines,
         sports_qualification=athlete.sports_qualification,
         bio=athlete.bio,
@@ -491,6 +488,39 @@ def get_athlete_profile(
     )
 
 
+@app.patch(
+    "/api/athletes/{user_id}/qualification",
+    response_model=AthleteQualificationUpdate,
+)
+def update_athlete_qualification(
+    user_id: int,
+    qualification_data: AthleteQualificationUpdate,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    athlete = db.get(User, user_id)
+
+    if athlete is None or athlete.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Спортсмен не найден",
+        )
+
+    qualification = (
+        qualification_data.sports_qualification.strip()
+        if qualification_data.sports_qualification
+        else None
+    )
+
+    athlete.sports_qualification = qualification
+    db.commit()
+    db.refresh(athlete)
+
+    return AthleteQualificationUpdate(
+        sports_qualification=athlete.sports_qualification,
+    )
+
+
 @app.patch("/api/me/profile", response_model=UserMe)
 def update_profile(
     profile_data: UserProfileUpdate,
@@ -505,24 +535,9 @@ def update_profile(
         if profile_data.full_name
         else None
     )
-    locality = (
-        profile_data.locality.strip()
-        if profile_data.locality
-        else None
-    )
-    education_org = (
-        profile_data.education_org.strip()
-        if profile_data.education_org
-        else None
-    )
     sports_disciplines = (
         profile_data.sports_disciplines.strip()
         if profile_data.sports_disciplines
-        else None
-    )
-    sports_qualification = (
-        profile_data.sports_qualification.strip()
-        if profile_data.sports_qualification
         else None
     )
     team_name = profile_data.team_name.strip() if profile_data.team_name else None
@@ -570,10 +585,7 @@ def update_profile(
     current_user.bio = bio
     current_user.full_name = full_name
     current_user.hide_full_name = profile_data.hide_full_name
-    current_user.locality = locality
-    current_user.education_org = education_org
     current_user.sports_disciplines = sports_disciplines
-    current_user.sports_qualification = sports_qualification
     current_user.team_status = profile_data.team_status
     current_user.team_name = (
         team_name if profile_data.team_status == "member" else None
