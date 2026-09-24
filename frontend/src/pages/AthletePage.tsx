@@ -203,7 +203,7 @@ export default function AthletePage() {
                 </strong>
               </div>
               <div>
-                <span>Спортивный разряд / звание</span>
+                <span>Спортивный разряд</span>
                 <strong>
                   {athlete.sports_qualification || "Отсутствует"}
                 </strong>
