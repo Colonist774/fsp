@@ -23,6 +23,23 @@ class User(Base):
         index=True,
     )
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    hide_full_name: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
+    locality: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    education_org: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    sports_disciplines: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    sports_qualification: Mapped[str | None] = mapped_column(
+        String(120),
+        nullable=True,
+    )
     team_status: Mapped[str] = mapped_column(
         String(20),
         default="solo",
