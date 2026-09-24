@@ -286,7 +286,7 @@ export default function AthletePage() {
                     <span>Соревнование</span>
                     <span>Дата</span>
                     <span>Место</span>
-                    <span>Рейтинг</span>
+                    <span className="athlete-result-points-example">Рейтинг</span>
                   </div>
 
                   {athlete.results.map((result) => (
