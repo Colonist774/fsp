@@ -7,6 +7,12 @@ type CurrentUser = {
   username: string;
   email: string | null;
   bio: string | null;
+  full_name: string | null;
+  hide_full_name: boolean;
+  locality: string | null;
+  education_org: string | null;
+  sports_disciplines: string | null;
+  sports_qualification: string | null;
   team_status: TeamStatus;
   team_name: string | null;
 };
@@ -19,6 +25,12 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [hideFullName, setHideFullName] = useState(false);
+  const [locality, setLocality] = useState("");
+  const [educationOrg, setEducationOrg] = useState("");
+  const [sportsDisciplines, setSportsDisciplines] = useState("");
+  const [sportsQualification, setSportsQualification] = useState("");
   const [teamStatus, setTeamStatus] = useState<TeamStatus>("solo");
   const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +67,12 @@ export default function EditProfilePage() {
         setUsername(user.username);
         setEmail(user.email ?? "");
         setBio(user.bio ?? "");
+        setFullName(user.full_name ?? "");
+        setHideFullName(user.hide_full_name);
+        setLocality(user.locality ?? "");
+        setEducationOrg(user.education_org ?? "");
+        setSportsDisciplines(user.sports_disciplines ?? "");
+        setSportsQualification(user.sports_qualification ?? "");
         setTeamStatus(user.team_status);
         setTeamName(user.team_name ?? "");
       } catch {
@@ -112,6 +130,12 @@ export default function EditProfilePage() {
             username: normalizedUsername,
             email: normalizedEmail,
             bio: bio.trim() || null,
+            full_name: fullName.trim() || null,
+            hide_full_name: hideFullName,
+            locality: locality.trim() || null,
+            education_org: educationOrg.trim() || null,
+            sports_disciplines: sportsDisciplines.trim() || null,
+            sports_qualification: sportsQualification.trim() || null,
             team_status: teamStatus,
             team_name:
               teamStatus === "member" ? normalizedTeamName : null,
@@ -133,6 +157,12 @@ export default function EditProfilePage() {
       setUsername(data.username);
       setEmail(data.email ?? "");
       setBio(data.bio ?? "");
+      setFullName(data.full_name ?? "");
+      setHideFullName(data.hide_full_name);
+      setLocality(data.locality ?? "");
+      setEducationOrg(data.education_org ?? "");
+      setSportsDisciplines(data.sports_disciplines ?? "");
+      setSportsQualification(data.sports_qualification ?? "");
       setTeamStatus(data.team_status);
       setTeamName(data.team_name ?? "");
       setSaved(true);
@@ -166,6 +196,77 @@ export default function EditProfilePage() {
           </label>
 
           <label>
+            <span>ФИО</span>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              maxLength={200}
+              disabled={isLoading || isSaving}
+            />
+          </label>
+
+          <label className="profile-edit-checkbox">
+            <input
+              type="checkbox"
+              checked={hideFullName}
+              onChange={(event) => setHideFullName(event.target.checked)}
+              disabled={isLoading || isSaving}
+            />
+            <span>Скрыть ФИО от других участников</span>
+          </label>
+
+          <div className="profile-edit-grid">
+            <label>
+              <span>Населённый пункт</span>
+              <input
+                type="text"
+                value={locality}
+                onChange={(event) => setLocality(event.target.value)}
+                maxLength={120}
+                disabled={isLoading || isSaving}
+              />
+            </label>
+
+            <label>
+              <span>Образовательная организация</span>
+              <input
+                type="text"
+                value={educationOrg}
+                onChange={(event) => setEducationOrg(event.target.value)}
+                maxLength={200}
+                disabled={isLoading || isSaving}
+              />
+            </label>
+
+            <label>
+              <span>Спортивные дисциплины</span>
+              <input
+                type="text"
+                value={sportsDisciplines}
+                onChange={(event) =>
+                  setSportsDisciplines(event.target.value)
+                }
+                maxLength={255}
+                disabled={isLoading || isSaving}
+              />
+            </label>
+
+            <label>
+              <span>Спортивный разряд / звание</span>
+              <input
+                type="text"
+                value={sportsQualification}
+                onChange={(event) =>
+                  setSportsQualification(event.target.value)
+                }
+                maxLength={120}
+                disabled={isLoading || isSaving}
+              />
+            </label>
+          </div>
+
+          <label>
             <span>Bio</span>
             <textarea
               value={bio}
@@ -187,7 +288,10 @@ export default function EditProfilePage() {
               disabled={isLoading || isSaving}
               required
             />
-            <small className="profile-edit-email-about">email необходим для связи при проведении соревнований, его видит только администрация ФСП</small>
+            <small className="profile-edit-email-about">
+              email необходим для связи при проведении соревнований, его
+              видит только администрация ФСП
+            </small>
           </label>
 
           <label>
@@ -225,7 +329,11 @@ export default function EditProfilePage() {
           )}
 
           {error && <div className="auth-error">{error}</div>}
-          {saved && <div className="profile-save-success">Изменения сохранены</div>}
+          {saved && (
+            <div className="profile-save-success">
+              Изменения сохранены
+            </div>
+          )}
 
           <button
             className="auth-submit profile-save-button"
