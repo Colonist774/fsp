@@ -128,8 +128,6 @@ class UserMe(UserRead):
     bio: str | None
     full_name: str | None
     hide_full_name: bool
-    locality: str | None
-    education_org: str | None
     sports_disciplines: str | None
     sports_qualification: str | None
     team_status: TeamStatus
@@ -148,10 +146,7 @@ class UserProfileUpdate(BaseModel):
     bio: str | None = Field(default=None, max_length=1000)
     full_name: str | None = Field(default=None, max_length=200)
     hide_full_name: bool = False
-    locality: str | None = Field(default=None, max_length=120)
-    education_org: str | None = Field(default=None, max_length=200)
     sports_disciplines: str | None = Field(default=None, max_length=255)
-    sports_qualification: str | None = Field(default=None, max_length=120)
     team_status: TeamStatus
     team_name: str | None = Field(default=None, max_length=100)
 
@@ -169,6 +164,10 @@ class UserStatistics(BaseModel):
     wins: int
     podiums: int
     recent_results: list[CompetitionResultSummary]
+
+
+class AthleteQualificationUpdate(BaseModel):
+    sports_qualification: str | None = Field(default=None, max_length=120)
 
 
 class AthleteResultRead(BaseModel):
