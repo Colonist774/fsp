@@ -3,7 +3,7 @@ export type CompetitionLevel =
   | "russia"
   | "all_russian"
   | "interregional"
-  | "dagestan_championship"
+  | "regional_championship"
   | "regional";
 export type CompetitionFormat = "online" | "offline" | "hybrid";
 export type CompetitionConductMode = "platform" | "external";
