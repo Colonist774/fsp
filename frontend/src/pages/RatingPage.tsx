@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 type TeamStatus = "member" | "looking" | "solo";
@@ -83,14 +84,17 @@ export default function RatingPage() {
     }
 
     return (
-      <div className={`rating-podium-card podium-${position}`}>
+      <Link
+        className={`rating-podium-card podium-${position}`}
+        to={`/athletes/${entry.user_id}`}
+      >
         <div className={`rating-podium-rank ${rankClass(entry.rank)}`}>
           {entry.rank}
         </div>
         <div className="rating-podium-name">{entry.username}</div>
         <div className="rating-podium-team">{getTeamLabel(entry)}</div>
         <div className="rating-podium-score">{entry.rating}</div>
-      </div>
+      </Link>
     );
   }
 
@@ -127,7 +131,12 @@ export default function RatingPage() {
                 {rest.map((entry) => (
                   <div className="rating-table-row" key={entry.user_id}>
                     <span className="rating-place">{entry.rank}</span>
-                    <span className="rating-username">{entry.username}</span>
+                    <Link
+                      className="rating-username"
+                      to={`/athletes/${entry.user_id}`}
+                    >
+                      {entry.username}
+                    </Link>
                     <span className="rating-team">{getTeamLabel(entry)}</span>
                     <strong>{entry.rating}</strong>
                   </div>
