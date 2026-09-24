@@ -11,7 +11,7 @@ CompetitionLevel = Literal[
     "russia",
     "all_russian",
     "interregional",
-    "dagestan_championship",
+    "regional_championship",
     "regional",
 ]
 CompetitionFormat = Literal["online", "offline", "hybrid"]
