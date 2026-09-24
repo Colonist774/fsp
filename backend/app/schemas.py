@@ -126,6 +126,12 @@ class UserRead(BaseModel):
 class UserMe(UserRead):
     email: str | None
     bio: str | None
+    full_name: str | None
+    hide_full_name: bool
+    locality: str | None
+    education_org: str | None
+    sports_disciplines: str | None
+    sports_qualification: str | None
     team_status: TeamStatus
     team_name: str | None
     solved_tasks: int
@@ -140,6 +146,12 @@ class UserProfileUpdate(BaseModel):
         pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
     )
     bio: str | None = Field(default=None, max_length=1000)
+    full_name: str | None = Field(default=None, max_length=200)
+    hide_full_name: bool = False
+    locality: str | None = Field(default=None, max_length=120)
+    education_org: str | None = Field(default=None, max_length=200)
+    sports_disciplines: str | None = Field(default=None, max_length=255)
+    sports_qualification: str | None = Field(default=None, max_length=120)
     team_status: TeamStatus
     team_name: str | None = Field(default=None, max_length=100)
 
@@ -157,6 +169,34 @@ class UserStatistics(BaseModel):
     wins: int
     podiums: int
     recent_results: list[CompetitionResultSummary]
+
+
+class AthleteResultRead(BaseModel):
+    competition_id: int
+    title: str
+    place: int
+    rating_points: int
+    ended_at: datetime
+
+
+class AthleteProfileRead(BaseModel):
+    id: int
+    username: str
+    full_name: str | None
+    hide_full_name: bool
+    locality: str | None
+    education_org: str | None
+    sports_disciplines: str | None
+    sports_qualification: str | None
+    bio: str | None
+    team_status: TeamStatus
+    team_name: str | None
+    rating: int
+    rank: int
+    competitions: int
+    wins: int
+    podiums: int
+    results: list[AthleteResultRead]
 
 
 class RankingEntry(BaseModel):
