@@ -30,8 +30,6 @@ class User(Base):
         server_default="false",
         nullable=False,
     )
-    locality: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    education_org: Mapped[str | None] = mapped_column(String(200), nullable=True)
     sports_disciplines: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
