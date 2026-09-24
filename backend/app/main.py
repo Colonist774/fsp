@@ -218,7 +218,7 @@ RATING_POINTS_BY_LEVEL: dict[str, dict[int, int]] = {
         9: 50,
         10: 50,
     },
-    "dagestan_championship": {
+    "regional_championship": {
         1: 200,
         2: 150,
         3: 100,
