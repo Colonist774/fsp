@@ -29,6 +29,7 @@ from app.schemas import (
     CompetitionRead,
     CompetitionResultRead,
     CompetitionResultUpdate,
+    AthleteProfileRead,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -162,6 +163,12 @@ def build_user_me(
         username=user.username,
         email=user.email,
         bio=user.bio,
+        full_name=user.full_name,
+        hide_full_name=user.hide_full_name,
+        locality=user.locality,
+        education_org=user.education_org,
+        sports_disciplines=user.sports_disciplines,
+        sports_qualification=user.sports_qualification,
         team_status=user.team_status,
         team_name=user.team_name,
         role=user.role,
@@ -398,6 +405,92 @@ def get_rankings(
     ]
 
 
+
+
+@app.get("/api/athletes/{user_id}", response_model=AthleteProfileRead)
+def get_athlete_profile(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    athlete = db.get(User, user_id)
+
+    if athlete is None or athlete.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Спортсмен не найден",
+        )
+
+    participants = get_ranked_participants(db)
+    rank = next(
+        (
+            index
+            for index, participant in enumerate(participants, start=1)
+            if participant.id == athlete.id
+        ),
+        len(participants),
+    )
+
+    result_rows = db.execute(
+        select(
+            Competition.id,
+            Competition.title,
+            Competition.level,
+            Competition.end_at,
+            CompetitionResult.place,
+        )
+        .join(
+            CompetitionResult,
+            CompetitionResult.competition_id == Competition.id,
+        )
+        .where(
+            CompetitionResult.user_id == athlete.id,
+            CompetitionResult.place.is_not(None),
+        )
+        .order_by(Competition.end_at.desc())
+    ).all()
+
+    wins = sum(
+        1
+        for _, _, _, _, place in result_rows
+        if place == 1
+    )
+    podiums = sum(
+        1
+        for _, _, _, _, place in result_rows
+        if place <= 3
+    )
+
+    return AthleteProfileRead(
+        id=athlete.id,
+        username=athlete.username,
+        full_name=athlete.full_name,
+        hide_full_name=athlete.hide_full_name,
+        locality=athlete.locality,
+        education_org=athlete.education_org,
+        sports_disciplines=athlete.sports_disciplines,
+        sports_qualification=athlete.sports_qualification,
+        bio=athlete.bio,
+        team_status=athlete.team_status,
+        team_name=athlete.team_name,
+        rating=athlete.rating,
+        rank=rank,
+        competitions=len(result_rows),
+        wins=wins,
+        podiums=podiums,
+        results=[
+            {
+                "competition_id": competition_id,
+                "title": title,
+                "place": place,
+                "rating_points": get_rating_points(level, place),
+                "ended_at": ended_at,
+            }
+            for competition_id, title, level, ended_at, place in result_rows
+        ],
+    )
+
+
 @app.patch("/api/me/profile", response_model=UserMe)
 def update_profile(
     profile_data: UserProfileUpdate,
@@ -407,6 +500,31 @@ def update_profile(
     username = profile_data.username.strip()
     email = profile_data.email.strip().lower()
     bio = profile_data.bio.strip() if profile_data.bio else None
+    full_name = (
+        profile_data.full_name.strip()
+        if profile_data.full_name
+        else None
+    )
+    locality = (
+        profile_data.locality.strip()
+        if profile_data.locality
+        else None
+    )
+    education_org = (
+        profile_data.education_org.strip()
+        if profile_data.education_org
+        else None
+    )
+    sports_disciplines = (
+        profile_data.sports_disciplines.strip()
+        if profile_data.sports_disciplines
+        else None
+    )
+    sports_qualification = (
+        profile_data.sports_qualification.strip()
+        if profile_data.sports_qualification
+        else None
+    )
     team_name = profile_data.team_name.strip() if profile_data.team_name else None
 
     if len(username) < 3:
@@ -450,6 +568,12 @@ def update_profile(
     current_user.username = username
     current_user.email = email
     current_user.bio = bio
+    current_user.full_name = full_name
+    current_user.hide_full_name = profile_data.hide_full_name
+    current_user.locality = locality
+    current_user.education_org = education_org
+    current_user.sports_disciplines = sports_disciplines
+    current_user.sports_qualification = sports_qualification
     current_user.team_status = profile_data.team_status
     current_user.team_name = (
         team_name if profile_data.team_status == "member" else None
