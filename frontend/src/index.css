@@ -1582,3 +1582,255 @@ nav a[aria-current="page"]::after {
 .competition-rating-points-exampl{
   justify-self: center;
 }
+
+.profile-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.profile-edit-checkbox {
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  align-items: center;
+}
+
+.profile-edit-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.profile-edit-checkbox > span {
+  color: var(--text-secondary) !important;
+  font-weight: 400 !important;
+}
+
+.athlete-page {
+  width: min(100% - 48px, 900px);
+}
+
+.athlete-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.athlete-header h1 {
+  margin-bottom: 6px;
+}
+
+.athlete-full-name {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.athlete-rating {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.athlete-rating strong {
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.athlete-rating span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.athlete-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.athlete-info > div {
+  display: grid;
+  gap: 6px;
+  min-height: 76px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.athlete-info > div:nth-child(odd) {
+  border-right: 1px solid var(--border);
+}
+
+.athlete-info span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.athlete-info strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.athlete-section {
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.athlete-section h2 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.athlete-bio {
+  margin: 0;
+  color: #b3bac4;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.athlete-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.athlete-metrics > div {
+  display: grid;
+  gap: 5px;
+}
+
+.athlete-metrics strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.athlete-metrics span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.athlete-results {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.athlete-results-header,
+.athlete-result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 70px 90px;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 0 14px;
+}
+
+.athlete-results-header {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.athlete-result-row {
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.athlete-result-row:last-child {
+  border-bottom: 0;
+}
+
+.athlete-result-row:hover {
+  background: var(--surface-hover);
+}
+
+.athlete-result-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.athlete-result-row > span {
+  color: var(--text-secondary);
+}
+
+.athlete-result-points {
+  justify-self: end;
+  color: var(--success) !important;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.athlete-empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.rating-podium-card {
+  display: block;
+  cursor: pointer;
+}
+
+.rating-podium-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.rating-username {
+  color: var(--text);
+}
+
+.rating-username:hover,
+.competition-athlete-link:hover {
+  color: #58a6ff;
+}
+
+.competition-athlete-link {
+  color: inherit;
+}
+
+@media (max-width: 700px) {
+  .profile-edit-grid,
+  .athlete-info,
+  .athlete-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .athlete-page {
+    width: min(100% - 28px, 900px);
+  }
+
+  .athlete-header {
+    display: grid;
+  }
+
+  .athlete-rating {
+    justify-items: start;
+  }
+
+  .athlete-info > div:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .athlete-results {
+    overflow-x: auto;
+  }
+
+  .athlete-results-header,
+  .athlete-result-row {
+    min-width: 640px;
+  }
+}
