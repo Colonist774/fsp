@@ -1583,12 +1583,6 @@ nav a[aria-current="page"]::after {
   justify-self: center;
 }
 
-.profile-edit-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
 .profile-edit-checkbox {
   grid-template-columns: 18px minmax(0, 1fr) !important;
   align-items: center;
@@ -1803,7 +1797,6 @@ nav a[aria-current="page"]::after {
 }
 
 @media (max-width: 700px) {
-  .profile-edit-grid,
   .athlete-info,
   .athlete-metrics {
     grid-template-columns: 1fr;
@@ -1832,5 +1825,59 @@ nav a[aria-current="page"]::after {
   .athlete-results-header,
   .athlete-result-row {
     min-width: 640px;
+  }
+}
+
+
+.athlete-qualification-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.athlete-qualification-form input {
+  width: 100%;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.athlete-qualification-form input:focus {
+  border-color: var(--accent);
+}
+
+.athlete-qualification-form button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.athlete-qualification-form button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.athlete-qualification-form button:disabled,
+.athlete-qualification-form input:disabled {
+  opacity: 0.55;
+}
+
+.athlete-admin-section .profile-save-success {
+  margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+  .athlete-qualification-form {
+    grid-template-columns: 1fr;
   }
 }
