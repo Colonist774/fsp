@@ -183,8 +183,6 @@ class AthleteProfileRead(BaseModel):
     username: str
     full_name: str | None
     hide_full_name: bool
-    locality: str | None
-    education_org: str | None
     sports_disciplines: str | None
     sports_qualification: str | None
     bio: str | None
