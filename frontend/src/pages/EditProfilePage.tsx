@@ -9,10 +9,7 @@ type CurrentUser = {
   bio: string | null;
   full_name: string | null;
   hide_full_name: boolean;
-  locality: string | null;
-  education_org: string | null;
   sports_disciplines: string | null;
-  sports_qualification: string | null;
   team_status: TeamStatus;
   team_name: string | null;
 };
@@ -27,10 +24,7 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState("");
   const [fullName, setFullName] = useState("");
   const [hideFullName, setHideFullName] = useState(false);
-  const [locality, setLocality] = useState("");
-  const [educationOrg, setEducationOrg] = useState("");
   const [sportsDisciplines, setSportsDisciplines] = useState("");
-  const [sportsQualification, setSportsQualification] = useState("");
   const [teamStatus, setTeamStatus] = useState<TeamStatus>("solo");
   const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -69,10 +63,7 @@ export default function EditProfilePage() {
         setBio(user.bio ?? "");
         setFullName(user.full_name ?? "");
         setHideFullName(user.hide_full_name);
-        setLocality(user.locality ?? "");
-        setEducationOrg(user.education_org ?? "");
         setSportsDisciplines(user.sports_disciplines ?? "");
-        setSportsQualification(user.sports_qualification ?? "");
         setTeamStatus(user.team_status);
         setTeamName(user.team_name ?? "");
       } catch {
@@ -132,10 +123,7 @@ export default function EditProfilePage() {
             bio: bio.trim() || null,
             full_name: fullName.trim() || null,
             hide_full_name: hideFullName,
-            locality: locality.trim() || null,
-            education_org: educationOrg.trim() || null,
             sports_disciplines: sportsDisciplines.trim() || null,
-            sports_qualification: sportsQualification.trim() || null,
             team_status: teamStatus,
             team_name:
               teamStatus === "member" ? normalizedTeamName : null,
@@ -159,10 +147,7 @@ export default function EditProfilePage() {
       setBio(data.bio ?? "");
       setFullName(data.full_name ?? "");
       setHideFullName(data.hide_full_name);
-      setLocality(data.locality ?? "");
-      setEducationOrg(data.education_org ?? "");
       setSportsDisciplines(data.sports_disciplines ?? "");
-      setSportsQualification(data.sports_qualification ?? "");
       setTeamStatus(data.team_status);
       setTeamName(data.team_name ?? "");
       setSaved(true);
@@ -216,55 +201,18 @@ export default function EditProfilePage() {
             <span>Скрыть ФИО от других участников</span>
           </label>
 
-          <div className="profile-edit-grid">
-            <label>
-              <span>Населённый пункт</span>
-              <input
-                type="text"
-                value={locality}
-                onChange={(event) => setLocality(event.target.value)}
-                maxLength={120}
-                disabled={isLoading || isSaving}
-              />
-            </label>
-
-            <label>
-              <span>Образовательная организация</span>
-              <input
-                type="text"
-                value={educationOrg}
-                onChange={(event) => setEducationOrg(event.target.value)}
-                maxLength={200}
-                disabled={isLoading || isSaving}
-              />
-            </label>
-
-            <label>
-              <span>Спортивные дисциплины</span>
-              <input
-                type="text"
-                value={sportsDisciplines}
-                onChange={(event) =>
-                  setSportsDisciplines(event.target.value)
-                }
-                maxLength={255}
-                disabled={isLoading || isSaving}
-              />
-            </label>
-
-            <label>
-              <span>Спортивный разряд / звание</span>
-              <input
-                type="text"
-                value={sportsQualification}
-                onChange={(event) =>
-                  setSportsQualification(event.target.value)
-                }
-                maxLength={120}
-                disabled={isLoading || isSaving}
-              />
-            </label>
-          </div>
+          <label>
+            <span>Спортивные дисциплины</span>
+            <input
+              type="text"
+              value={sportsDisciplines}
+              onChange={(event) =>
+                setSportsDisciplines(event.target.value)
+              }
+              maxLength={255}
+              disabled={isLoading || isSaving}
+            />
+          </label>
 
           <label>
             <span>Bio</span>
