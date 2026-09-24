@@ -18,8 +18,6 @@ type AthleteProfile = {
   username: string;
   full_name: string | null;
   hide_full_name: boolean;
-  locality: string | null;
-  education_org: string | null;
   sports_disciplines: string | null;
   sports_qualification: string | null;
   bio: string | null;
@@ -62,6 +60,9 @@ export default function AthletePage() {
   const { id } = useParams();
   const [athlete, setAthlete] = useState<AthleteProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [qualification, setQualification] = useState("");
+  const [isSavingQualification, setIsSavingQualification] = useState(false);
+  const [qualificationSaved, setQualificationSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function AthletePage() {
         const athleteData: AthleteProfile =
           await athleteResponse.json();
         setAthlete(athleteData);
+        setQualification(athleteData.sports_qualification ?? "");
 
         if (meResponse.ok) {
           const me: CurrentUser = await meResponse.json();
@@ -109,6 +111,60 @@ export default function AthletePage() {
 
     loadAthlete();
   }, [id]);
+
+  async function saveQualification() {
+    const token = localStorage.getItem("token");
+
+    if (!token || !athlete || currentUser?.role !== "organizer") {
+      return;
+    }
+
+    setError(null);
+    setQualificationSaved(false);
+    setIsSavingQualification(true);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/athletes/${athlete.id}/qualification`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            sports_qualification: qualification.trim() || null,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось сохранить разряд",
+        );
+        return;
+      }
+
+      setAthlete((current) =>
+        current
+          ? {
+              ...current,
+              sports_qualification: data.sports_qualification,
+            }
+          : current,
+      );
+      setQualification(data.sports_qualification ?? "");
+      setQualificationSaved(true);
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsSavingQualification(false);
+    }
+  }
 
   const canSeeFullName =
     athlete &&
@@ -141,14 +197,6 @@ export default function AthletePage() {
 
             <section className="athlete-info">
               <div>
-                <span>Населённый пункт</span>
-                <strong>{athlete.locality || "Не указано"}</strong>
-              </div>
-              <div>
-                <span>Образовательная организация</span>
-                <strong>{athlete.education_org || "Не указано"}</strong>
-              </div>
-              <div>
                 <span>Спортивные дисциплины</span>
                 <strong>
                   {athlete.sports_disciplines || "Не указано"}
@@ -157,7 +205,7 @@ export default function AthletePage() {
               <div>
                 <span>Спортивный разряд / звание</span>
                 <strong>
-                  {athlete.sports_qualification || "Не указано"}
+                  {athlete.sports_qualification || "Отсутствует"}
                 </strong>
               </div>
               <div>
@@ -165,6 +213,39 @@ export default function AthletePage() {
                 <strong>{getTeamLabel(athlete)}</strong>
               </div>
             </section>
+
+            {currentUser?.role === "organizer" && (
+              <section className="athlete-section athlete-admin-section">
+                <h2>Спортивный разряд</h2>
+
+                <div className="athlete-qualification-form">
+                  <input
+                    type="text"
+                    value={qualification}
+                    maxLength={120}
+                    placeholder="Оставьте пустым, если разряд отсутствует"
+                    disabled={isSavingQualification}
+                    onChange={(event) => {
+                      setQualification(event.target.value);
+                      setQualificationSaved(false);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isSavingQualification}
+                    onClick={saveQualification}
+                  >
+                    {isSavingQualification ? "Сохранение..." : "Сохранить"}
+                  </button>
+                </div>
+
+                {qualificationSaved && (
+                  <div className="profile-save-success">
+                    Разряд обновлён
+                  </div>
+                )}
+              </section>
+            )}
 
             {athlete.bio && (
               <section className="athlete-section">
