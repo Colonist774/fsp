@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import type { Contest } from "../types/contest";
 
@@ -410,7 +410,12 @@ export default function CompetitionPage() {
                   key={result.user_id}
                 >
                   <strong>{result.place ?? "—"}</strong>
-                  <span>{result.username}</span>
+                  <Link
+                    className="competition-athlete-link"
+                    to={`/athletes/${result.user_id}`}
+                  >
+                    {result.username}
+                  </Link>
                   <span className="competition-rating-points">
                     +{result.rating_points}
                   </span>
@@ -447,7 +452,14 @@ export default function CompetitionPage() {
                     className="competition-participant-row"
                     key={participant.user_id}
                   >
-                    <strong>{participant.username}</strong>
+                    <strong>
+                      <Link
+                        className="competition-athlete-link"
+                        to={`/athletes/${participant.user_id}`}
+                      >
+                        {participant.username}
+                      </Link>
+                    </strong>
                     <span>{getTeamLabel(participant)}</span>
                     <span>{participant.email || "—"}</span>
                     <span>{formatDateTime(participant.registered_at)}</span>
