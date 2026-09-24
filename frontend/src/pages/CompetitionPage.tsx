@@ -28,7 +28,7 @@ const levelLabels = {
   russia: "Чемпионат / Кубок России",
   all_russian: "Всероссийское",
   interregional: "Межрегиональное",
-  dagestan_championship: "Чемпионат / Кубок Региона",
+  regional_championship: "Чемпионат / Кубок региона",
   regional: "Региональное",
 };
 
