@@ -210,6 +210,41 @@ class Task(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     input: Mapped[str] = mapped_column(Text, default="", nullable=False)
     output: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    constraints: Mapped[str] = mapped_column(
+        Text,
+        default="",
+        server_default="",
+        nullable=False,
+    )
+
+
+class CompetitionTask(Base):
+    __tablename__ = "competition_tasks"
+    __table_args__ = (
+        UniqueConstraint(
+            "competition_id",
+            "task_id",
+            name="uq_competition_tasks_competition_task",
+        ),
+        UniqueConstraint(
+            "competition_id",
+            "position",
+            name="uq_competition_tasks_competition_position",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    competition_id: Mapped[int] = mapped_column(
+        ForeignKey("competitions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class Submission(Base):
@@ -219,6 +254,11 @@ class Submission(Base):
     task_id: Mapped[int] = mapped_column(
         ForeignKey("tasks.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    competition_id: Mapped[int | None] = mapped_column(
+        ForeignKey("competitions.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     user_id: Mapped[int | None] = mapped_column(
