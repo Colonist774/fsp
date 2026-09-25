@@ -5,6 +5,7 @@ type CurrentUser = {
   id: number;
   username: string;
   role: "participant" | "organizer";
+  organizer_probation_until: string | null;
 };
 
 export default function Navbar() {
@@ -104,6 +105,17 @@ export default function Navbar() {
                 }}
               >
                 Мой профиль
+              </button>
+            )}
+            {role === "organizer" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate("/organizer/access");
+                }}
+              >
+                Организаторы
               </button>
             )}
             <button
