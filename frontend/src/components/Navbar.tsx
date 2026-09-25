@@ -96,7 +96,7 @@ export default function Navbar() {
 
         {isMenuOpen && (
           <div className="nav-profile-menu">
-            {role === "participant" && userId !== null && (
+            {userId !== null && (
               <button
                 type="button"
                 onClick={() => {
@@ -115,7 +115,7 @@ export default function Navbar() {
                   navigate("/organizer/access");
                 }}
               >
-                Организаторы
+                Управление организаторами
               </button>
             )}
             <button
