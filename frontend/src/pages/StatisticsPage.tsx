@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 type CompetitionResult = {
@@ -47,6 +47,7 @@ function formatDate(value: string) {
 }
 
 export default function StatisticsPage() {
+  const navigate = useNavigate();
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [visibleResults, setVisibleResults] = useState(5);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +91,14 @@ export default function StatisticsPage() {
       <Navbar />
 
       <main className="page statistics-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() => navigate(-1)}
+        >
+          ← Назад
+        </button>
+
         <h1>Моя статистика</h1>
 
         {error && <div className="auth-error">{error}</div>}
