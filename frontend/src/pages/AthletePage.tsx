@@ -18,6 +18,9 @@ type AthleteProfile = {
   username: string;
   full_name: string | null;
   hide_full_name: boolean;
+  locality: string | null;
+  hide_locality: boolean;
+  education_org: string | null;
   sports_disciplines: string | null;
   sports_qualification: string | null;
   bio: string | null;
@@ -249,6 +252,12 @@ export default function AthletePage() {
       currentUser?.role === "organizer" ||
       currentUser?.id === athlete.id);
 
+  const canSeeLocality =
+    athlete &&
+    (!athlete.hide_locality ||
+      currentUser?.role === "organizer" ||
+      currentUser?.id === athlete.id);
+
   return (
     <>
       <Navbar />
@@ -306,6 +315,16 @@ export default function AthletePage() {
             </section>
 
             <section className="athlete-info">
+              {canSeeLocality && (
+                <div>
+                  <span>Населённый пункт</span>
+                  <strong>{athlete.locality || "Не указано"}</strong>
+                </div>
+              )}
+              <div>
+                <span>Образовательная организация</span>
+                <strong>{athlete.education_org || "Не указано"}</strong>
+              </div>
               <div>
                 <span>Спортивные дисциплины</span>
                 <strong>
