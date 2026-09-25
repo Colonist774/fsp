@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -37,6 +37,7 @@ from app.schemas import (
     CompetitionRead,
     CompetitionResultRead,
     CompetitionResultUpdate,
+    CompetitionSubmissionDraftRead,
     CompetitionTaskRead,
     AthleteProfileRead,
     AthleteQualificationRead,
@@ -1096,6 +1097,7 @@ def build_competition_read(
     ) or 0
 
     is_registered = False
+    participation_finished = False
 
     if current_user is not None:
         registration = db.scalar(
@@ -1105,6 +1107,10 @@ def build_competition_read(
             )
         )
         is_registered = registration is not None
+        participation_finished = (
+            registration is not None
+            and registration.finished_at is not None
+        )
 
     return CompetitionRead(
         id=competition.id,
@@ -1125,6 +1131,7 @@ def build_competition_read(
             and current_time <= competition.registration_deadline
         ),
         is_registered=is_registered,
+        participation_finished=participation_finished,
         registered_count=registered_count,
         created_by_user_id=competition.created_by_user_id,
         created_at=competition.created_at,
@@ -1289,6 +1296,7 @@ def get_competition_participants(
             team_status=user.team_status,
             team_name=user.team_name,
             registered_at=registration.registered_at,
+            finished_at=registration.finished_at,
             place=result.place if result is not None else None,
         )
         for registration, user, result in rows
@@ -1405,6 +1413,7 @@ def save_competition_result(
             team_status=user.team_status,
             team_name=user.team_name,
             registered_at=registration.registered_at,
+            finished_at=registration.finished_at,
             place=None,
         )
 
@@ -1429,6 +1438,7 @@ def save_competition_result(
         team_status=user.team_status,
         team_name=user.team_name,
         registered_at=registration.registered_at,
+        finished_at=registration.finished_at,
         place=result.place,
     )
 
