@@ -1641,11 +1641,13 @@ def build_task_read(
 def build_task_organizer_read(
     task: Task,
     db: Session,
+    points: int,
 ) -> TaskOrganizerRead:
     public_task = build_task_read(task, db)
 
     return TaskOrganizerRead(
         **public_task.model_dump(),
+        points=points,
         tests=get_hidden_task_tests(db, task.id),
     )
 
@@ -1791,6 +1793,7 @@ def get_competition_tasks(
             position=link.position,
             title=task.title,
             difficulty=task.difficulty,
+            points=link.points,
         )
         for link, task in rows
     ]
@@ -1948,6 +1951,7 @@ def create_competition_task(
             competition_id=competition_id,
             task_id=task.id,
             position=max_position + 1,
+            points=task_data.points,
         )
     )
 
@@ -1956,7 +1960,11 @@ def create_competition_task(
     db.commit()
     db.refresh(task)
 
-    return build_task_organizer_read(task, db)
+    return build_task_organizer_read(
+        task,
+        db,
+        task_data.points,
+    )
 
 
 @app.get(
@@ -1977,7 +1985,13 @@ def get_competition_task_for_organizer(
             detail="Соревнование не найдено",
         )
 
-    if get_competition_task_link(db, competition_id, task_id) is None:
+    link = get_competition_task_link(
+        db,
+        competition_id,
+        task_id,
+    )
+
+    if link is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена в этом соревновании",
@@ -1991,7 +2005,11 @@ def get_competition_task_for_organizer(
             detail="Задача не найдена",
         )
 
-    return build_task_organizer_read(task, db)
+    return build_task_organizer_read(
+        task,
+        db,
+        link.points,
+    )
 
 
 @app.patch(
@@ -2013,7 +2031,13 @@ def update_competition_task(
             detail="Соревнование не найдено",
         )
 
-    if get_competition_task_link(db, competition_id, task_id) is None:
+    link = get_competition_task_link(
+        db,
+        competition_id,
+        task_id,
+    )
+
+    if link is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена в этом соревновании",
@@ -2033,13 +2057,18 @@ def update_competition_task(
     task.input = task_data.input.strip()
     task.output = task_data.output.strip()
     task.constraints = task_data.constraints.strip()
+    link.points = task_data.points
 
     replace_task_tests(db, task, task_data)
 
     db.commit()
     db.refresh(task)
 
-    return build_task_organizer_read(task, db)
+    return build_task_organizer_read(
+        task,
+        db,
+        link.points,
+    )
 
 
 @app.delete(
