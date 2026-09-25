@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Submission, TaskTest
-from app.runner import run_code
+from app.runner import RunResult, prepare_code
 
 
 def normalize_output(value: str) -> str:
@@ -30,24 +30,32 @@ def judge_submission(db: Session, submission: Submission) -> Submission:
     submission.status = "running"
     db.commit()
 
-    for test in tests:
-        result = run_code(
-            language=submission.language,
-            code=submission.code,
-            stdin=test.input_data,
-        )
-
-        if result.status != "ok":
-            submission.status = result.status
+    with prepare_code(
+        language=submission.language,
+        code=submission.code,
+    ) as prepared:
+        if isinstance(prepared, RunResult):
+            submission.status = prepared.status
             db.commit()
             db.refresh(submission)
             return submission
 
-        if normalize_output(result.stdout) != normalize_output(test.expected_output):
-            submission.status = "wrong_answer"
-            db.commit()
-            db.refresh(submission)
-            return submission
+        for test in tests:
+            result = prepared.run(test.input_data)
+
+            if result.status != "ok":
+                submission.status = result.status
+                db.commit()
+                db.refresh(submission)
+                return submission
+
+            if normalize_output(result.stdout) != normalize_output(
+                test.expected_output
+            ):
+                submission.status = "wrong_answer"
+                db.commit()
+                db.refresh(submission)
+                return submission
 
     submission.status = "accepted"
     db.commit()
