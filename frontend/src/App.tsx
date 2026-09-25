@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import EditProfilePage from "./pages/EditProfilePage";
 import StatisticsPage from "./pages/StatisticsPage";
 import RatingPage from "./pages/RatingPage";
+import RatingInfoPage from "./pages/RatingInfoPage";
 import CompetitionPage from "./pages/CompetitionPage";
 import CompetitionFormPage from "./pages/CompetitionFormPage";
 import AthletePage from "./pages/AthletePage";
@@ -97,6 +98,10 @@ export default function App() {
       <Route path="/" element={<ContestsPage />} />
       <Route path="/solve" element={<SolvePage />} />
       <Route path="/rating" element={<RatingPage />} />
+      <Route
+        path="/rating/how-it-works"
+        element={<RatingInfoPage />}
+      />
       <Route path="/athletes/:id" element={<AthletePage />} />
       <Route
         path="/organizer/access"
