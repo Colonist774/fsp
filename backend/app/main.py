@@ -2463,7 +2463,7 @@ def get_task(
 def create_submission(
     submission_data: SubmissionCreate,
     db: Session = Depends(get_db),
-    current_user: User | None = Depends(get_optional_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     cleanup_expired_competition_submissions(db)
 
@@ -2476,12 +2476,6 @@ def create_submission(
         )
 
     if submission_data.competition_id is not None:
-        if current_user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Требуется авторизация",
-            )
-
         competition = db.get(
             Competition,
             submission_data.competition_id,
@@ -2540,7 +2534,7 @@ def create_submission(
     submission = Submission(
         task_id=submission_data.task_id,
         competition_id=submission_data.competition_id,
-        user_id=current_user.id if current_user is not None else None,
+        user_id=current_user.id,
         code=submission_data.code,
         language=submission_data.language,
         status="pending",
