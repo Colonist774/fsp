@@ -560,6 +560,9 @@ export default function CompetitionPage() {
                         </span>
                         <strong>{task.title}</strong>
                         <span className="competition-task-difficulty">
+                          {"★".repeat(task.difficulty)}
+                          {"☆".repeat(5 - task.difficulty)}
+                          {" · "}
                           {task.points} баллов
                         </span>
                       </Link>
