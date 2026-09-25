@@ -68,6 +68,23 @@ class CompetitionResultRead(BaseModel):
     rating_points: int
 
 
+class AnnouncementBase(BaseModel):
+    title: str = Field(min_length=3, max_length=220)
+    content: str = Field(min_length=1, max_length=20000)
+    image_url: str | None = Field(default=None, max_length=1000)
+
+
+class AnnouncementCreate(AnnouncementBase):
+    pass
+
+
+class AnnouncementRead(AnnouncementBase):
+    id: int
+    created_by_user_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class TaskRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
