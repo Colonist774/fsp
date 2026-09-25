@@ -11,7 +11,7 @@ import uuid
 
 MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024
 MAX_WORKSPACE_BYTES = 32 * 1024 * 1024
-OUTPUT_POLL_INTERVAL_SECONDS = 0.02
+OUTPUT_POLL_INTERVAL_SECONDS = 0.005
 
 
 @dataclass(frozen=True)
@@ -222,8 +222,12 @@ def _run_container(
 
             try:
                 if process.stdin is not None:
-                    process.stdin.write(stdin.encode("utf-8"))
-                    process.stdin.close()
+                    try:
+                        process.stdin.write(stdin.encode("utf-8"))
+                    except BrokenPipeError:
+                        pass
+                    finally:
+                        process.stdin.close()
 
                 started_at = time.monotonic()
                 output_limit_exceeded = False
@@ -244,6 +248,15 @@ def _run_container(
                         break
 
                     time.sleep(OUTPUT_POLL_INTERVAL_SECONDS)
+
+                final_output_size = (
+                    os.fstat(stdout_file.fileno()).st_size
+                    + os.fstat(stderr_file.fileno()).st_size
+                )
+                output_limit_exceeded = (
+                    output_limit_exceeded
+                    or final_output_size > MAX_CAPTURED_OUTPUT_BYTES
+                )
 
                 if output_limit_exceeded or timed_out:
                     _force_remove_container(container_name)
