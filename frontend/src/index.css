@@ -2471,3 +2471,442 @@ nav a[aria-current="page"]::after {
     min-width: 650px;
   }
 }
+
+
+.task-form-page {
+  width: min(100% - 48px, 980px);
+}
+
+.task-form-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.task-form-heading h1 {
+  margin: 0;
+}
+
+.task-form-heading p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.task-form-heading > button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.task-form-heading > button:hover {
+  background: var(--surface-hover);
+}
+
+.task-author-form {
+  display: grid;
+  gap: 18px;
+}
+
+.task-author-section {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.task-author-section h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.task-author-section label {
+  display: grid;
+  gap: 7px;
+}
+
+.task-author-section label > span {
+  color: #c7cdd5;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.task-author-section input,
+.task-author-section select,
+.task-author-section textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.task-author-section input,
+.task-author-section select {
+  height: 40px;
+  padding: 0 11px;
+}
+
+.task-author-section textarea {
+  padding: 10px 11px;
+  resize: vertical;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.task-author-section input:focus,
+.task-author-section select:focus,
+.task-author-section textarea:focus {
+  border-color: var(--accent);
+}
+
+.task-author-difficulty {
+  width: min(100%, 260px);
+}
+
+.task-author-two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.task-author-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.task-author-section-heading p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.task-author-section-heading button,
+.task-author-test-actions button,
+.task-author-case-heading button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-author-section-heading button:hover:not(:disabled),
+.task-author-test-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.task-author-section-heading button:disabled,
+.task-author-test-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.task-author-test-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-author-test-actions > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-author-cases {
+  display: grid;
+  gap: 12px;
+}
+
+.task-author-case {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1117;
+}
+
+.task-author-case-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-author-case-heading strong {
+  font-size: 13px;
+}
+
+.task-author-case-heading button {
+  min-height: 30px;
+  border-color: #5e2b2b;
+  color: #ff9b96;
+}
+
+.task-author-case-heading button:hover {
+  background: #211315;
+}
+
+.task-author-submit {
+  width: max-content;
+  min-width: 150px;
+}
+
+.competition-tasks-section {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.competition-tasks-heading {
+  justify-content: space-between;
+}
+
+.competition-tasks-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.competition-tasks-heading button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.competition-tasks-heading button:hover {
+  background: var(--surface-hover);
+}
+
+.competition-task-list {
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.competition-task-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 52px;
+  border-bottom: 1px solid var(--border);
+}
+
+.competition-task-row:last-child {
+  border-bottom: 0;
+}
+
+.competition-task-main {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 90px;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.competition-task-main:hover {
+  background: var(--surface-hover);
+}
+
+.competition-task-position {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.competition-task-main strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.competition-task-difficulty {
+  justify-self: end;
+  color: #d29922;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.competition-task-actions {
+  display: flex;
+  gap: 7px;
+  padding-right: 10px;
+}
+
+.competition-task-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.competition-task-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.competition-task-actions .competition-task-delete {
+  border-color: #5e2b2b;
+  color: #ff9b96;
+}
+
+.competition-task-actions .competition-task-delete:hover:not(:disabled) {
+  background: #211315;
+}
+
+.competition-task-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.task-contest-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.task-contest-back:hover {
+  color: var(--text);
+}
+
+.task-statement-text {
+  color: #c1c8d0;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.task-examples {
+  display: grid;
+  gap: 12px;
+}
+
+.task-example {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.task-example > strong {
+  display: block;
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 12px;
+}
+
+.task-example-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.task-example-grid > div {
+  min-width: 0;
+}
+
+.task-example-grid > div:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.task-example-grid span {
+  display: block;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.task-example-grid pre {
+  min-height: 68px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-submit-error {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  color: #ff9b96;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .task-form-page {
+    width: min(100% - 28px, 980px);
+  }
+
+  .task-form-heading,
+  .task-author-section-heading {
+    flex-direction: column;
+  }
+
+  .task-author-two-columns,
+  .task-example-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-example-grid > div:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .competition-task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .competition-task-actions {
+    padding: 0 10px 10px;
+  }
+
+  .competition-task-main {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .competition-task-difficulty {
+    display: none;
+  }
+}
