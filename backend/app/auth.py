@@ -98,3 +98,26 @@ def require_organizer(
         )
 
     return current_user
+
+
+def organizer_is_on_probation(user: User) -> bool:
+    return (
+        user.role == "organizer"
+        and user.organizer_probation_until is not None
+        and user.organizer_probation_until > datetime.now(timezone.utc)
+    )
+
+
+def require_trusted_organizer(
+    current_user: User = Depends(require_organizer),
+) -> User:
+    if organizer_is_on_probation(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "На испытательном сроке нельзя управлять "
+                "правами организаторов"
+            ),
+        )
+
+    return current_user
