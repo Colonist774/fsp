@@ -460,21 +460,24 @@ def get_athlete_profile(
 ):
     athlete = db.get(User, user_id)
 
-    if athlete is None or athlete.role != "participant":
+    if athlete is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Спортсмен не найден",
+            detail="Пользователь не найден",
         )
 
-    participants = get_ranked_participants(db)
-    rank = next(
-        (
-            index
-            for index, participant in enumerate(participants, start=1)
-            if participant.id == athlete.id
-        ),
-        len(participants),
-    )
+    rank = None
+
+    if athlete.role == "participant":
+        participants = get_ranked_participants(db)
+        rank = next(
+            (
+                index
+                for index, participant in enumerate(participants, start=1)
+                if participant.id == athlete.id
+            ),
+            len(participants),
+        )
 
     result_rows = db.execute(
         select(
