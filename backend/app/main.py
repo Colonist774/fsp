@@ -1255,7 +1255,7 @@ def update_competition(
 def get_platform_competition_standings(
     db: Session,
     competition_id: int,
-) -> dict[int, tuple[int, int]]:
+) -> dict[int, tuple[int, int | None]]:
     registrations = db.scalars(
         select(CompetitionRegistration).where(
             CompetitionRegistration.competition_id == competition_id
@@ -1313,7 +1313,7 @@ def get_platform_competition_standings(
             )
 
     ordered_scores = sorted(
-        scores.values(),
+        (score for score in scores.values() if score > 0),
         reverse=True,
     )
     place_by_score: dict[int, int] = {}
@@ -1324,7 +1324,7 @@ def get_platform_competition_standings(
     return {
         user_id: (
             score,
-            place_by_score[score],
+            place_by_score.get(score) if score > 0 else None,
         )
         for user_id, score in scores.items()
     }
@@ -1333,7 +1333,7 @@ def get_platform_competition_standings(
 def sync_platform_competition_results(
     db: Session,
     competition: Competition,
-) -> dict[int, tuple[int, int]]:
+) -> dict[int, tuple[int, int | None]]:
     standings = get_platform_competition_standings(
         db,
         competition.id,
@@ -1356,6 +1356,11 @@ def sync_platform_competition_results(
 
     for user_id, (_, place) in standings.items():
         result = existing_results.get(user_id)
+
+        if place is None:
+            if result is not None:
+                db.delete(result)
+            continue
 
         if result is None:
             result = CompetitionResult(
@@ -1472,7 +1477,7 @@ def get_competition_results(
             detail="Соревнование не найдено",
         )
 
-    standings: dict[int, tuple[int, int]] = {}
+    standings: dict[int, tuple[int, int | None]] = {}
 
     if competition.conduct_mode == "platform":
         standings = sync_platform_competition_results(
