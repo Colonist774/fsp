@@ -1252,6 +1252,128 @@ def update_competition(
     return build_competition_read(competition, db, current_user)
 
 
+def get_platform_competition_standings(
+    db: Session,
+    competition_id: int,
+) -> dict[int, tuple[int, int]]:
+    registrations = db.scalars(
+        select(CompetitionRegistration).where(
+            CompetitionRegistration.competition_id == competition_id
+        )
+    ).all()
+
+    if not registrations:
+        return {}
+
+    user_ids = [registration.user_id for registration in registrations]
+
+    task_links = db.scalars(
+        select(CompetitionTask).where(
+            CompetitionTask.competition_id == competition_id
+        )
+    ).all()
+
+    points_by_task = {
+        link.task_id: link.points
+        for link in task_links
+    }
+
+    scores = {
+        user_id: 0
+        for user_id in user_ids
+    }
+
+    if points_by_task:
+        accepted_rows = db.execute(
+            select(
+                Submission.user_id,
+                Submission.task_id,
+            )
+            .where(
+                Submission.competition_id == competition_id,
+                Submission.status == "accepted",
+                Submission.user_id.in_(user_ids),
+                Submission.task_id.in_(list(points_by_task)),
+            )
+            .distinct()
+        ).all()
+
+        solved_by_user: dict[int, set[int]] = {}
+
+        for user_id, task_id in accepted_rows:
+            if user_id is None:
+                continue
+
+            solved_by_user.setdefault(user_id, set()).add(task_id)
+
+        for user_id, solved_task_ids in solved_by_user.items():
+            scores[user_id] = sum(
+                points_by_task[task_id]
+                for task_id in solved_task_ids
+            )
+
+    ordered_scores = sorted(
+        set(scores.values()),
+        reverse=True,
+    )
+    place_by_score = {
+        score: index
+        for index, score in enumerate(ordered_scores, start=1)
+    }
+
+    return {
+        user_id: (
+            score,
+            place_by_score[score],
+        )
+        for user_id, score in scores.items()
+    }
+
+
+def sync_platform_competition_results(
+    db: Session,
+    competition: Competition,
+) -> dict[int, tuple[int, int]]:
+    standings = get_platform_competition_standings(
+        db,
+        competition.id,
+    )
+
+    if (
+        competition.conduct_mode != "platform"
+        or get_competition_status(competition) != "past"
+    ):
+        return standings
+
+    existing_results = {
+        result.user_id: result
+        for result in db.scalars(
+            select(CompetitionResult).where(
+                CompetitionResult.competition_id == competition.id
+            )
+        ).all()
+    }
+
+    for user_id, (_, place) in standings.items():
+        result = existing_results.get(user_id)
+
+        if result is None:
+            result = CompetitionResult(
+                competition_id=competition.id,
+                user_id=user_id,
+            )
+            db.add(result)
+
+        result.place = place
+
+    db.flush()
+
+    for user_id in standings:
+        recalculate_user_rating(db, user_id)
+
+    return standings
+
+
 @app.get(
     "/api/competitions/{competition_id}/participants",
     response_model=list[CompetitionParticipantRead],
@@ -1290,7 +1412,13 @@ def get_competition_participants(
         .order_by(CompetitionRegistration.registered_at)
     ).all()
 
-    return [
+    standings = (
+        get_platform_competition_standings(db, competition_id)
+        if competition.conduct_mode == "platform"
+        else {}
+    )
+
+    participants = [
         CompetitionParticipantRead(
             user_id=user.id,
             username=user.username,
@@ -1299,10 +1427,33 @@ def get_competition_participants(
             team_name=user.team_name,
             registered_at=registration.registered_at,
             finished_at=registration.finished_at,
-            place=result.place if result is not None else None,
+            score=(
+                standings[user.id][0]
+                if user.id in standings
+                else None
+            ),
+            place=(
+                standings[user.id][1]
+                if user.id in standings
+                else (
+                    result.place
+                    if result is not None
+                    else None
+                )
+            ),
         )
         for registration, user, result in rows
     ]
+
+    if competition.conduct_mode == "platform":
+        participants.sort(
+            key=lambda participant: (
+                participant.place or 10**9,
+                participant.username.lower(),
+            )
+        )
+
+    return participants
 
 
 @app.get(
@@ -1321,6 +1472,15 @@ def get_competition_results(
             detail="Соревнование не найдено",
         )
 
+    standings: dict[int, tuple[int, int]] = {}
+
+    if competition.conduct_mode == "platform":
+        standings = sync_platform_competition_results(
+            db,
+            competition,
+        )
+        db.commit()
+
     rows = db.execute(
         select(CompetitionResult, User)
         .join(User, User.id == CompetitionResult.user_id)
@@ -1338,6 +1498,11 @@ def get_competition_results(
         CompetitionResultRead(
             user_id=user.id,
             username=user.username,
+            score=(
+                standings[user.id][0]
+                if user.id in standings
+                else None
+            ),
             place=result.place,
             rating_points=get_rating_points(
                 competition.level,
@@ -1365,6 +1530,15 @@ def save_competition_result(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode == "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Для соревнований на платформе места "
+                "рассчитываются автоматически"
+            ),
         )
 
     if get_competition_status(competition) != "past":
@@ -1416,6 +1590,7 @@ def save_competition_result(
             team_name=user.team_name,
             registered_at=registration.registered_at,
             finished_at=registration.finished_at,
+            score=None,
             place=None,
         )
 
@@ -1441,6 +1616,7 @@ def save_competition_result(
         team_name=user.team_name,
         registered_at=registration.registered_at,
         finished_at=registration.finished_at,
+        score=None,
         place=result.place,
     )
 
