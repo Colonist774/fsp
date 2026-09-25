@@ -839,7 +839,7 @@ nav a[aria-current="page"]::after {
 
 
 .statistics-page {
-  width: min(100% - 48px, 760px);
+  width: min(100% - 48px, 920px);
 }
 
 .statistics-content {
@@ -898,6 +898,97 @@ nav a[aria-current="page"]::after {
   font-variant-numeric: tabular-nums;
 }
 
+.statistics-competitions-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.statistics-competitions-header,
+.statistics-competition-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 120px 110px 100px;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.statistics-competitions-header {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statistics-competition-row {
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.statistics-competition-row:last-child {
+  border-bottom: 0;
+}
+
+.statistics-competition-row:hover {
+  background: var(--surface-hover);
+}
+
+.statistics-competition-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.statistics-competition-row > div strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-competition-row > div span {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.statistics-competition-row > span,
+.statistics-competition-row > strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-competition-row > strong {
+  justify-self: end;
+  font-weight: 600;
+}
+
+.statistics-competition-status {
+  width: max-content;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statistics-competition-status[data-status="active"] {
+  border-color: #285b3a;
+  background: #102117;
+  color: #79c98f;
+}
+
+.statistics-competition-status[data-status="future"] {
+  border-color: #33475f;
+  background: #111a25;
+  color: #9ab4d0;
+}
+
 .statistics-results {
   border-top: 1px solid var(--border);
 }
@@ -949,7 +1040,7 @@ nav a[aria-current="page"]::after {
 
 @media (max-width: 700px) {
   .statistics-page {
-    width: min(100% - 28px, 760px);
+    width: min(100% - 28px, 920px);
   }
 
   .statistics-section {
@@ -3390,5 +3481,17 @@ nav a[aria-current="page"]::after {
   .rating-info-qualification-header,
   .rating-info-qualification-row {
     grid-template-columns: minmax(0, 1fr) 80px;
+  }
+}
+
+
+@media (max-width: 700px) {
+  .statistics-competitions-table {
+    overflow-x: auto;
+  }
+
+  .statistics-competitions-header,
+  .statistics-competition-row {
+    min-width: 700px;
   }
 }
