@@ -5,6 +5,32 @@ import Navbar from "../components/Navbar";
 type TeamStatus = "member" | "looking" | "solo";
 type UserRole = "participant" | "organizer";
 
+const QUALIFICATIONS = [
+  {
+    group: "Спортивные звания",
+    items: [
+      ["Заслуженный мастер спорта России (ЗМС)", 5000],
+      [
+        "Мастер спорта России международного класса (МСМК): Гроссмейстер России",
+        4000,
+      ],
+      ["Мастер спорта России (МС)", 3000],
+    ],
+  },
+  {
+    group: "Спортивные разряды",
+    items: [
+      ["Кандидат в мастера спорта России (КМС)", 2000],
+      ["1-й спортивный разряд", 1500],
+      ["2-й спортивный разряд", 1000],
+      ["3-й спортивный разряд", 800],
+      ["1-й юношеский разряд", 500],
+      ["2-й юношеский разряд", 400],
+      ["3-й юношеский разряд", 300],
+    ],
+  },
+] as const;
+
 type AthleteResult = {
   competition_id: number;
   title: string;
@@ -23,6 +49,7 @@ type AthleteProfile = {
   education_org: string | null;
   sports_disciplines: string | null;
   sports_qualification: string | null;
+  qualification_points: number;
   bio: string | null;
   team_status: TeamStatus;
   team_name: string | null;
@@ -213,7 +240,7 @@ export default function AthletePage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            sports_qualification: qualification.trim() || null,
+            sports_qualification: qualification || null,
           }),
         },
       );
@@ -234,6 +261,8 @@ export default function AthletePage() {
           ? {
               ...current,
               sports_qualification: data.sports_qualification,
+              qualification_points: data.qualification_points,
+              rating: data.rating,
             }
           : current,
       );
@@ -332,9 +361,11 @@ export default function AthletePage() {
                 </strong>
               </div>
               <div>
-                <span>Спортивный разряд</span>
+                <span>Спортивное звание / разряд</span>
                 <strong>
-                  {athlete.sports_qualification || "Отсутствует"}
+                  {athlete.sports_qualification
+                    ? `${athlete.sports_qualification} · +${athlete.qualification_points}`
+                    : "Отсутствует"}
                 </strong>
               </div>
               <div>
@@ -345,20 +376,28 @@ export default function AthletePage() {
 
             {currentUser?.role === "organizer" && (
               <section className="athlete-section athlete-admin-section">
-                <h2>Спортивный разряд</h2>
+                <h2>Спортивное звание / разряд</h2>
 
                 <div className="athlete-qualification-form">
-                  <input
-                    type="text"
+                  <select
                     value={qualification}
-                    maxLength={120}
-                    placeholder="Оставьте пустым, если разряд отсутствует"
                     disabled={isSavingQualification}
                     onChange={(event) => {
                       setQualification(event.target.value);
                       setQualificationSaved(false);
                     }}
-                  />
+                  >
+                    <option value="">Отсутствует — 0 баллов</option>
+                    {QUALIFICATIONS.map((group) => (
+                      <optgroup label={group.group} key={group.group}>
+                        {group.items.map(([label, points]) => (
+                          <option value={label} key={label}>
+                            {label} — {points} баллов
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     disabled={isSavingQualification}
@@ -370,7 +409,7 @@ export default function AthletePage() {
 
                 {qualificationSaved && (
                   <div className="profile-save-success">
-                    Разряд обновлён
+                    Звание / разряд обновлены
                   </div>
                 )}
               </section>
