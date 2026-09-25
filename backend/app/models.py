@@ -249,6 +249,12 @@ class CompetitionTask(Base):
         index=True,
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
+    points: Mapped[int] = mapped_column(
+        Integer,
+        default=100,
+        server_default="100",
+        nullable=False,
+    )
 
 
 class Submission(Base):
