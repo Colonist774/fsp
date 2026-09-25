@@ -9,7 +9,6 @@ type CompetitionResult = {
 
 type Statistics = {
   rating: number;
-  qualification_points: number;
   rank: number | null;
   competitions: number;
   wins: number;
@@ -76,9 +75,6 @@ export default function StatisticsPage() {
                 Место в рейтинге: {statistics.rank === null
                   ? "—"
                   : `#${statistics.rank}`}
-              </div>
-              <div className="statistics-rank">
-                За спортивное звание / разряд: +{statistics.qualification_points}
               </div>
             </section>
 
