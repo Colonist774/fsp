@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -13,7 +13,9 @@ from app.auth import (
     get_current_user,
     get_optional_current_user,
     hash_password,
+    organizer_is_on_probation,
     require_organizer,
+    require_trusted_organizer,
     verify_password,
 )
 from app.database import get_db
@@ -37,6 +39,7 @@ from app.schemas import (
     AthleteQualificationUpdate,
     AnnouncementCreate,
     AnnouncementRead,
+    OrganizerAccessRead,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -174,6 +177,7 @@ def build_user_me(
         id=user.id,
         username=user.username,
         email=user.email,
+        organizer_probation_until=user.organizer_probation_until,
         bio=user.bio,
         full_name=user.full_name,
         hide_full_name=user.hide_full_name,
@@ -499,13 +503,38 @@ def get_athlete_profile(
     )
 
 
+@app.get("/api/organizers", response_model=list[OrganizerAccessRead])
+def get_organizers(
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    organizers = list(
+        db.scalars(
+            select(User)
+            .where(User.role == "organizer")
+            .order_by(func.lower(User.username), User.id)
+        ).all()
+    )
+
+    return [
+        OrganizerAccessRead(
+            id=user.id,
+            username=user.username,
+            full_name=user.full_name,
+            organizer_probation_until=user.organizer_probation_until,
+            on_probation=organizer_is_on_probation(user),
+        )
+        for user in organizers
+    ]
+
+
 @app.post(
     "/api/users/{user_id}/grant-organizer",
-    response_model=UserRead,
+    response_model=OrganizerAccessRead,
 )
 def grant_organizer_role(
     user_id: int,
-    current_user: User = Depends(require_organizer),
+    current_user: User = Depends(require_trusted_organizer),
     db: Session = Depends(get_db),
 ):
     user = db.get(User, user_id)
@@ -523,6 +552,63 @@ def grant_organizer_role(
         )
 
     user.role = "organizer"
+    user.organizer_probation_until = (
+        datetime.now(timezone.utc) + timedelta(days=7)
+    )
+
+    db.commit()
+    db.refresh(user)
+
+    return OrganizerAccessRead(
+        id=user.id,
+        username=user.username,
+        full_name=user.full_name,
+        organizer_probation_until=user.organizer_probation_until,
+        on_probation=True,
+    )
+
+
+@app.delete(
+    "/api/users/{user_id}/organizer-rights",
+    response_model=UserRead,
+)
+def revoke_organizer_role(
+    user_id: int,
+    current_user: User = Depends(require_trusted_organizer),
+    db: Session = Depends(get_db),
+):
+    user = db.get(User, user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+    if user.role != "organizer":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь не является организатором",
+        )
+
+    if not organizer_is_on_probation(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "После завершения испытательного срока "
+                "права организатора нельзя отозвать"
+            ),
+        )
+
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя отозвать права у самого себя",
+        )
+
+    user.role = "participant"
+    user.organizer_probation_until = None
+
     db.commit()
     db.refresh(user)
 
