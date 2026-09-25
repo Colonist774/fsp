@@ -2568,6 +2568,23 @@ def delete_competition_task(
     current_user: User = Depends(require_organizer),
     db: Session = Depends(get_db),
 ):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if get_competition_status(competition) != "future":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "После начала соревнования задачи нельзя удалять, "
+                "чтобы сохранить историю решений и результатов"
+            ),
+        )
+
     link = get_competition_task_link(
         db,
         competition_id,
@@ -2589,16 +2606,6 @@ def delete_competition_task(
         )
 
     db.delete(task)
-    db.flush()
-
-    competition = db.get(Competition, competition_id)
-
-    if (
-        competition is not None
-        and get_competition_status(competition) == "past"
-    ):
-        sync_platform_competition_results(db, competition)
-
     db.commit()
 
 
