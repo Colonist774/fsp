@@ -9,7 +9,7 @@ type CompetitionResult = {
 
 type Statistics = {
   rating: number;
-  rank: number;
+  rank: number | null;
   competitions: number;
   wins: number;
   podiums: number;
@@ -72,7 +72,9 @@ export default function StatisticsPage() {
                 {statistics.rating}
               </div>
               <div className="statistics-rank">
-                Место в рейтинге: #{statistics.rank}
+                Место в рейтинге: {statistics.rank === null
+                  ? "—"
+                  : `#${statistics.rank}`}
               </div>
             </section>
 
