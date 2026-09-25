@@ -34,6 +34,7 @@ type AthleteProfile = {
 type CurrentUser = {
   id: number;
   role: UserRole;
+  organizer_probation_until: string | null;
 };
 
 function getTeamLabel(athlete: AthleteProfile) {
@@ -135,13 +136,20 @@ export default function AthletePage() {
     };
   }, []);
 
+  const canManageOrganizerAccess =
+    currentUser?.role === "organizer" &&
+    (
+      currentUser.organizer_probation_until === null ||
+      new Date(currentUser.organizer_probation_until).getTime() <= Date.now()
+    );
+
   async function grantOrganizerRights() {
     const token = localStorage.getItem("token");
 
     if (
       !token ||
       !athlete ||
-      currentUser?.role !== "organizer" ||
+      !canManageOrganizerAccess ||
       promotionConfirmation !== "ПОДТВЕРДИТЬ"
     ) {
       return;
@@ -173,7 +181,7 @@ export default function AthletePage() {
 
       setIsPromotionModalOpen(false);
       setPromotionConfirmation("");
-      navigate("/");
+      navigate("/organizer/access");
     } catch {
       setError("Не удалось подключиться к серверу");
     } finally {
@@ -264,7 +272,7 @@ export default function AthletePage() {
                   <span>Рейтинг · #{athlete.rank}</span>
                 </div>
 
-                {currentUser?.role === "organizer" && (
+                {canManageOrganizerAccess && (
                   <div className="athlete-user-menu" ref={userMenuRef}>
                     <button
                       className="athlete-user-menu-trigger"
@@ -434,7 +442,8 @@ export default function AthletePage() {
               <p>
                 Вы уверены, что хотите присвоить{" "}
                 <strong>{athlete.username}</strong> права администратора?
-                Для завершения введите "ПОДТВЕРДИТЬ"
+                Пользователь получит права организатора с испытательным
+                сроком 7 дней. Для завершения введите "ПОДТВЕРДИТЬ"
               </p>
 
               <input
