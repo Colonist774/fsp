@@ -2133,6 +2133,9 @@ def create_competition_task(
 
     replace_task_tests(db, task, task_data)
 
+    if get_competition_status(competition) == "past":
+        sync_platform_competition_results(db, competition)
+
     db.commit()
     db.refresh(task)
 
@@ -2237,6 +2240,9 @@ def update_competition_task(
 
     replace_task_tests(db, task, task_data)
 
+    if get_competition_status(competition) == "past":
+        sync_platform_competition_results(db, competition)
+
     db.commit()
     db.refresh(task)
 
@@ -2278,6 +2284,16 @@ def delete_competition_task(
         )
 
     db.delete(task)
+    db.flush()
+
+    competition = db.get(Competition, competition_id)
+
+    if (
+        competition is not None
+        and get_competition_status(competition) == "past"
+    ):
+        sync_platform_competition_results(db, competition)
+
     db.commit()
 
 
