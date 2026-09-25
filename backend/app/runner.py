@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
@@ -18,6 +20,48 @@ class RunResult:
     status: str
     stdout: str = ""
     stderr: str = ""
+
+
+@dataclass(frozen=True)
+class PreparedProgram:
+    spec: LanguageSpec
+    workspace: Path
+
+    def run(
+        self,
+        stdin: str,
+        *,
+        time_limit_seconds: float = 2.0,
+    ) -> RunResult:
+        run_result = _run_container(
+            self.spec.image,
+            self.workspace,
+            self.spec.run_command,
+            stdin=stdin,
+            timeout_seconds=time_limit_seconds,
+        )
+
+        if run_result is None:
+            return RunResult(status="time_limit_exceeded")
+
+        if run_result.returncode != 0:
+            if _docker_error(run_result.stderr):
+                return RunResult(
+                    status="runner_error",
+                    stderr=run_result.stderr,
+                )
+
+            return RunResult(
+                status="runtime_error",
+                stdout=run_result.stdout,
+                stderr=run_result.stderr,
+            )
+
+        return RunResult(
+            status="ok",
+            stdout=run_result.stdout,
+            stderr=run_result.stderr,
+        )
 
 
 LANGUAGES: dict[str, LanguageSpec] = {
@@ -139,6 +183,67 @@ def _run_container(
         )
 
 
+def _compile_program(
+    spec: LanguageSpec,
+    workspace: Path,
+) -> RunResult | None:
+    if spec.compile_command is None:
+        return None
+
+    compile_result = _run_container(
+        spec.image,
+        workspace,
+        spec.compile_command,
+        timeout_seconds=12.0,
+    )
+
+    if compile_result is None:
+        return RunResult(status="compilation_timeout")
+
+    if compile_result.returncode == 0:
+        return None
+
+    if _docker_error(compile_result.stderr):
+        return RunResult(
+            status="runner_error",
+            stderr=compile_result.stderr,
+        )
+
+    return RunResult(
+        status="compilation_error",
+        stdout=compile_result.stdout,
+        stderr=compile_result.stderr,
+    )
+
+
+@contextmanager
+def prepare_code(
+    language: str,
+    code: str,
+) -> Iterator[PreparedProgram | RunResult]:
+    spec = LANGUAGES.get(language)
+
+    if spec is None:
+        yield RunResult(status="unsupported_language")
+        return
+
+    with tempfile.TemporaryDirectory(prefix="fsp-judge-") as temp_dir:
+        workspace = Path(temp_dir)
+        source_file = workspace / spec.filename
+        source_file.write_text(code, encoding="utf-8")
+
+        compile_error = _compile_program(spec, workspace)
+
+        if compile_error is not None:
+            yield compile_error
+            return
+
+        yield PreparedProgram(
+            spec=spec,
+            workspace=workspace,
+        )
+
+
 def run_code(
     language: str,
     code: str,
@@ -146,66 +251,11 @@ def run_code(
     *,
     time_limit_seconds: float = 2.0,
 ) -> RunResult:
-    spec = LANGUAGES.get(language)
+    with prepare_code(language, code) as prepared:
+        if isinstance(prepared, RunResult):
+            return prepared
 
-    if spec is None:
-        return RunResult(status="unsupported_language")
-
-    with tempfile.TemporaryDirectory(prefix="fsp-judge-") as temp_dir:
-        workspace = Path(temp_dir)
-        source_file = workspace / spec.filename
-        source_file.write_text(code, encoding="utf-8")
-
-        if spec.compile_command is not None:
-            compile_result = _run_container(
-                spec.image,
-                workspace,
-                spec.compile_command,
-                timeout_seconds=12.0,
-            )
-
-            if compile_result is None:
-                return RunResult(status="compilation_timeout")
-
-            if compile_result.returncode != 0:
-                if _docker_error(compile_result.stderr):
-                    return RunResult(
-                        status="runner_error",
-                        stderr=compile_result.stderr,
-                    )
-
-                return RunResult(
-                    status="compilation_error",
-                    stdout=compile_result.stdout,
-                    stderr=compile_result.stderr,
-                )
-
-        run_result = _run_container(
-            spec.image,
-            workspace,
-            spec.run_command,
-            stdin=stdin,
-            timeout_seconds=time_limit_seconds,
-        )
-
-        if run_result is None:
-            return RunResult(status="time_limit_exceeded")
-
-        if run_result.returncode != 0:
-            if _docker_error(run_result.stderr):
-                return RunResult(
-                    status="runner_error",
-                    stderr=run_result.stderr,
-                )
-
-            return RunResult(
-                status="runtime_error",
-                stdout=run_result.stdout,
-                stderr=run_result.stderr,
-            )
-
-        return RunResult(
-            status="ok",
-            stdout=run_result.stdout,
-            stderr=run_result.stderr,
+        return prepared.run(
+            stdin,
+            time_limit_seconds=time_limit_seconds,
         )
