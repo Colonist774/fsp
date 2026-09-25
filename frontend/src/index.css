@@ -2988,3 +2988,143 @@ nav a[aria-current="page"]::after {
     padding: 0 9px;
   }
 }
+
+
+.task-finish-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 7, 10, 0.76);
+}
+
+.task-finish-confirm-modal {
+  width: min(100%, 460px);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.task-finish-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-finish-confirm-header span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.task-finish-confirm-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.task-finish-confirm-close {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  padding: 0 0 2px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-finish-confirm-close:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.task-finish-confirm-body {
+  padding: 18px 20px;
+}
+
+.task-finish-confirm-body p {
+  margin: 0;
+  color: #c4cbd4;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.task-finish-confirm-note {
+  margin-top: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1117;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.task-finish-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.task-finish-confirm-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-finish-confirm-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.task-finish-confirm-actions .task-finish-confirm-submit {
+  border-color: #6b3030;
+  background: #2a1517;
+  color: #ff9b96;
+}
+
+.task-finish-confirm-actions
+  .task-finish-confirm-submit:hover:not(:disabled) {
+  background: #35191c;
+}
+
+.task-finish-confirm-actions button:disabled,
+.task-finish-confirm-close:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 560px) {
+  .task-finish-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .task-finish-confirm-actions button {
+    width: 100%;
+  }
+}
