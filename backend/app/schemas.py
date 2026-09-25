@@ -142,6 +142,7 @@ class UserRead(BaseModel):
 
 class UserMe(UserRead):
     email: str | None
+    organizer_probation_until: datetime | None
     bio: str | None
     full_name: str | None
     hide_full_name: bool
@@ -220,6 +221,14 @@ class RankingEntry(BaseModel):
     team_status: TeamStatus
     team_name: str | None
     rating: int
+
+
+class OrganizerAccessRead(BaseModel):
+    id: int
+    username: str
+    full_name: str | None
+    organizer_probation_until: datetime | None
+    on_probation: bool
 
 
 class TokenRead(BaseModel):
