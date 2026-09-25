@@ -210,6 +210,7 @@ def get_me(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    finalize_finished_platform_competitions(db)
     return build_user_me(current_user, db)
 
 
@@ -366,6 +367,7 @@ def get_my_statistics(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    finalize_finished_platform_competitions(db)
     participants = get_ranked_participants(db)
     rank = next(
         (
@@ -436,6 +438,7 @@ def get_rankings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    finalize_finished_platform_competitions(db)
     participants = get_ranked_participants(db, limit=100)
 
     return [
@@ -459,6 +462,7 @@ def get_athlete_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    finalize_finished_platform_competitions(db)
     athlete = db.get(User, user_id)
 
     if athlete is None:
@@ -1159,6 +1163,7 @@ def get_competitions(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
+    finalize_finished_platform_competitions(db)
     cleanup_expired_competition_submissions(db)
 
     competitions = db.scalars(
@@ -1177,6 +1182,7 @@ def get_competition(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
+    finalize_finished_platform_competitions(db)
     competition = db.get(Competition, competition_id)
 
     if competition is None:
@@ -1376,7 +1382,39 @@ def sync_platform_competition_results(
     for user_id in standings:
         recalculate_user_rating(db, user_id)
 
+    competition.results_finalized_at = datetime.now(timezone.utc)
+
     return standings
+
+
+def finalize_finished_platform_competitions(
+    db: Session,
+) -> None:
+    now = datetime.now(timezone.utc)
+
+    competitions = list(
+        db.scalars(
+            select(Competition)
+            .where(
+                Competition.conduct_mode == "platform",
+                Competition.end_at <= now,
+                Competition.results_finalized_at.is_(None),
+            )
+            .order_by(Competition.end_at)
+            .with_for_update(skip_locked=True)
+        ).all()
+    )
+
+    if not competitions:
+        return
+
+    for competition in competitions:
+        sync_platform_competition_results(
+            db,
+            competition,
+        )
+
+    db.commit()
 
 
 @app.get(
@@ -1480,11 +1518,20 @@ def get_competition_results(
     standings: dict[int, tuple[int, int | None]] = {}
 
     if competition.conduct_mode == "platform":
-        standings = sync_platform_competition_results(
-            db,
-            competition,
-        )
-        db.commit()
+        if (
+            get_competition_status(competition) == "past"
+            and competition.results_finalized_at is None
+        ):
+            standings = sync_platform_competition_results(
+                db,
+                competition,
+            )
+            db.commit()
+        else:
+            standings = get_platform_competition_standings(
+                db,
+                competition.id,
+            )
 
     rows = db.execute(
         select(CompetitionResult, User)
