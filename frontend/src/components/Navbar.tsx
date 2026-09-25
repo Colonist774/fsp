@@ -107,6 +107,27 @@ export default function Navbar() {
                 Мой профиль
               </button>
             )}
+            
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/profile/stats");
+              }}
+            >
+              Моя статистика
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/profile/edit");
+              }}
+            >
+              Редактировать профиль
+            </button>
+
             {role === "organizer" && (
               <button
                 type="button"
@@ -118,25 +139,6 @@ export default function Navbar() {
                 Управление организаторами
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate("/profile/edit");
-              }}
-            >
-              Редактировать профиль
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate("/profile/stats");
-              }}
-            >
-              Моя статистика
-            </button>
-
             <button
               type="button"
               onClick={() => {
