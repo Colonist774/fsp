@@ -59,6 +59,7 @@ export default function TaskPage() {
     useState<SubmissionStatus | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isFinishConfirmOpen, setIsFinishConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -213,14 +214,6 @@ export default function TaskPage() {
       return;
     }
 
-    if (
-      !window.confirm(
-        "Завершить участие в соревновании? После этого отправлять новые решения будет нельзя.",
-      )
-    ) {
-      return;
-    }
-
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -253,6 +246,7 @@ export default function TaskPage() {
       }
 
       setCompetition(data);
+      setIsFinishConfirmOpen(false);
       navigate(`/contests/${competitionId}`);
     } catch {
       setError("Не удалось подключиться к серверу");
@@ -393,9 +387,9 @@ export default function TaskPage() {
                     className="task-finish"
                     type="button"
                     disabled={isFinishing || isSubmitting}
-                    onClick={finishParticipation}
+                    onClick={() => setIsFinishConfirmOpen(true)}
                   >
-                    {isFinishing ? "Завершение..." : "Завершить"}
+                    Завершить
                   </button>
                 )}
 
@@ -498,6 +492,79 @@ export default function TaskPage() {
               : ""}
           </div>
         </section>
+        {isFinishConfirmOpen && (
+          <div
+            className="task-finish-confirm-overlay"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                !isFinishing
+              ) {
+                setIsFinishConfirmOpen(false);
+              }
+            }}
+          >
+            <div
+              className="task-finish-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="task-finish-confirm-title"
+            >
+              <div className="task-finish-confirm-header">
+                <div>
+                  <span>Соревнование</span>
+                  <h2 id="task-finish-confirm-title">
+                    Завершить участие?
+                  </h2>
+                </div>
+
+                <button
+                  className="task-finish-confirm-close"
+                  type="button"
+                  aria-label="Закрыть"
+                  disabled={isFinishing}
+                  onClick={() => setIsFinishConfirmOpen(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="task-finish-confirm-body">
+                <p>
+                  После завершения участия вы больше не сможете
+                  отправлять решения в этом соревновании.
+                </p>
+
+                <div className="task-finish-confirm-note">
+                  Уже отправленные решения и сохранённый код останутся
+                  доступны после завершения.
+                </div>
+              </div>
+
+              <div className="task-finish-confirm-actions">
+                <button
+                  type="button"
+                  disabled={isFinishing}
+                  onClick={() => setIsFinishConfirmOpen(false)}
+                >
+                  Отмена
+                </button>
+
+                <button
+                  className="task-finish-confirm-submit"
+                  type="button"
+                  disabled={isFinishing}
+                  onClick={finishParticipation}
+                >
+                  {isFinishing
+                    ? "Завершение..."
+                    : "Завершить участие"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
