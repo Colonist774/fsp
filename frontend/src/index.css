@@ -2139,3 +2139,63 @@ nav a[aria-current="page"]::after {
     padding: 18px;
   }
 }
+
+
+.announcement-file-input {
+  height: auto !important;
+  min-height: 42px;
+  padding: 7px !important;
+}
+
+.announcement-file-input::file-selector-button {
+  min-height: 28px;
+  margin-right: 10px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.announcement-image-help {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.announcement-image-preview {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 520px);
+}
+
+.announcement-image-preview img {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.announcement-image-preview button {
+  width: max-content;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #5e2b2b;
+  border-radius: 6px;
+  background: transparent;
+  color: #ff9b96;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.announcement-image-preview button:hover:not(:disabled) {
+  background: #211315;
+}
+
+.announcement-image-preview button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
