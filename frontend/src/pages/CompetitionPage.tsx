@@ -24,6 +24,13 @@ type CompetitionResult = {
   rating_points: number;
 };
 
+type CompetitionTask = {
+  task_id: number;
+  position: number;
+  title: string;
+  difficulty: number;
+};
+
 const levelLabels = {
   russia: "Чемпионат / Кубок России",
   all_russian: "Всероссийское",
@@ -67,6 +74,8 @@ export default function CompetitionPage() {
   const [role, setRole] = useState<CurrentUser["role"]>("participant");
   const [participants, setParticipants] = useState<CompetitionParticipant[]>([]);
   const [results, setResults] = useState<CompetitionResult[]>([]);
+  const [tasks, setTasks] = useState<CompetitionTask[]>([]);
+  const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
@@ -152,6 +161,45 @@ export default function CompetitionPage() {
     }
   }
 
+  async function loadTasks() {
+    const token = localStorage.getItem("token");
+
+    if (!token || !competition || competition.conduct_mode !== "platform") {
+      setTasks([]);
+      return;
+    }
+
+    const participantCanSee =
+      role === "participant" &&
+      competition.is_registered &&
+      competition.status !== "future";
+
+    if (role !== "organizer" && !participantCanSee) {
+      setTasks([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${id}/tasks`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data: CompetitionTask[] = await response.json();
+      setTasks(data);
+    } catch {
+      return;
+    }
+  }
+
   useEffect(() => {
     loadCompetition();
   }, [id]);
@@ -167,6 +215,16 @@ export default function CompetitionPage() {
       loadResults();
     }
   }, [id, competition?.status]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [
+    id,
+    role,
+    competition?.conduct_mode,
+    competition?.status,
+    competition?.is_registered,
+  ]);
 
   async function registerForCompetition() {
     const token = localStorage.getItem("token");
@@ -219,6 +277,49 @@ export default function CompetitionPage() {
           : participant,
       ),
     );
+  }
+
+  async function deleteTask(task: CompetitionTask) {
+    const token = localStorage.getItem("token");
+
+    if (!token || role !== "organizer") {
+      return;
+    }
+
+    if (!window.confirm(`Удалить задачу «${task.title}»?`)) {
+      return;
+    }
+
+    setDeletingTaskId(task.task_id);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/organizer/competitions/${id}/tasks/${task.task_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(
+          typeof data?.detail === "string"
+            ? data.detail
+            : "Не удалось удалить задачу",
+        );
+        return;
+      }
+
+      await loadTasks();
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setDeletingTaskId(null);
+    }
   }
 
   async function saveResult(participant: CompetitionParticipant) {
@@ -387,10 +488,102 @@ export default function CompetitionPage() {
             <button
               className="competition-primary-action"
               type="button"
-              disabled
+              disabled={!competition.is_registered || tasks.length === 0}
+              onClick={() => {
+                if (tasks.length > 0) {
+                  navigate(
+                    `/contests/${competition.id}/tasks/${tasks[0].task_id}`,
+                  );
+                }
+              }}
             >
-              Начать
+              {!competition.is_registered
+                ? "Вы не зарегистрированы"
+                : tasks.length === 0
+                  ? "Задачи пока не добавлены"
+                  : "Начать"}
             </button>
+          )}
+
+        {competition.conduct_mode === "platform" &&
+          (role === "organizer" ||
+            (competition.is_registered &&
+              competition.status !== "future")) && (
+            <section className="competition-tasks-section">
+              <div className="competition-section-heading competition-tasks-heading">
+                <div>
+                  <h2>Задачи</h2>
+                  <span>{tasks.length}</span>
+                </div>
+
+                {role === "organizer" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/organizer/competitions/${competition.id}/tasks/new`,
+                      )
+                    }
+                  >
+                    + Добавить задачу
+                  </button>
+                )}
+              </div>
+
+              {tasks.length === 0 ? (
+                <p className="competition-section-empty">
+                  Задачи пока не добавлены
+                </p>
+              ) : (
+                <div className="competition-task-list">
+                  {tasks.map((task) => (
+                    <div
+                      className="competition-task-row"
+                      key={task.task_id}
+                    >
+                      <Link
+                        className="competition-task-main"
+                        to={`/contests/${competition.id}/tasks/${task.task_id}`}
+                      >
+                        <span className="competition-task-position">
+                          {task.position}
+                        </span>
+                        <strong>{task.title}</strong>
+                        <span className="competition-task-difficulty">
+                          {"★".repeat(task.difficulty)}
+                          {"☆".repeat(5 - task.difficulty)}
+                        </span>
+                      </Link>
+
+                      {role === "organizer" && (
+                        <div className="competition-task-actions">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(
+                                `/organizer/competitions/${competition.id}/tasks/${task.task_id}/edit`,
+                              )
+                            }
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            className="competition-task-delete"
+                            type="button"
+                            disabled={deletingTaskId === task.task_id}
+                            onClick={() => deleteTask(task)}
+                          >
+                            {deletingTaskId === task.task_id
+                              ? "Удаление..."
+                              : "Удалить"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
 
         {competition.status === "past" && results.length > 0 && (
