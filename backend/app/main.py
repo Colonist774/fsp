@@ -1495,6 +1495,81 @@ def register_for_competition(
     )
 
 
+@app.post(
+    "/api/competitions/{competition_id}/finish",
+    response_model=CompetitionRead,
+)
+def finish_competition_participation(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Завершать участие может только участник",
+        )
+
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Это соревнование проводится вне платформы",
+        )
+
+    if get_competition_status(competition) != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Завершить участие можно только во время соревнования",
+        )
+
+    registration = db.scalar(
+        select(CompetitionRegistration).where(
+            CompetitionRegistration.competition_id == competition_id,
+            CompetitionRegistration.user_id == current_user.id,
+        )
+    )
+
+    if registration is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Вы не зарегистрированы на это соревнование",
+        )
+
+    if registration.finished_at is None:
+        registration.finished_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(registration)
+
+    return build_competition_read(
+        competition,
+        db,
+        current_user,
+    )
+
+
+def cleanup_expired_competition_submissions(
+    db: Session,
+) -> None:
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    expired_competition_ids = select(Competition.id).where(
+        Competition.end_at <= cutoff
+    )
+
+    db.execute(
+        delete(Submission).where(
+            Submission.competition_id.in_(expired_competition_ids)
+        )
+    )
+    db.commit()
+
 
 def get_task_examples(
     db: Session,
