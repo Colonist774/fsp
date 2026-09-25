@@ -6,6 +6,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import AnnouncementPage from "./pages/AnnouncementPage";
 import AnnouncementFormPage from "./pages/AnnouncementFormPage";
 import TaskPage from "./pages/TaskPage";
+import TaskFormPage from "./pages/TaskFormPage";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import EditProfilePage from "./pages/EditProfilePage";
@@ -121,6 +122,18 @@ export default function App() {
         element={<AnnouncementFormPage />}
       />
       <Route path="/tasks/:id" element={<TaskPage />} />
+      <Route
+        path="/contests/:competitionId/tasks/:id"
+        element={<TaskPage />}
+      />
+      <Route
+        path="/organizer/competitions/:competitionId/tasks/new"
+        element={<TaskFormPage />}
+      />
+      <Route
+        path="/organizer/competitions/:competitionId/tasks/:taskId/edit"
+        element={<TaskFormPage />}
+      />
       <Route path="/profile/edit" element={<EditProfilePage />} />
       <Route path="/profile/stats" element={<StatisticsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
