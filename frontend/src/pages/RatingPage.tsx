@@ -103,7 +103,12 @@ export default function RatingPage() {
       <Navbar />
 
       <main className="page rating-page">
-        <h1>Рейтинг</h1>
+        <div className="rating-page-heading">
+          <h1>Рейтинг</h1>
+          <Link className="rating-info-link" to="/rating/how-it-works">
+            Как строится рейтинг?
+          </Link>
+        </div>
 
         {error && <div className="auth-error">{error}</div>}
 
