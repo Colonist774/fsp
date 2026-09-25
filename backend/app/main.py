@@ -337,7 +337,7 @@ def get_my_statistics(
             for index, participant in enumerate(participants, start=1)
             if participant.id == current_user.id
         ),
-        1,
+        None,
     )
 
     competitions_count = db.scalar(
