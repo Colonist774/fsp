@@ -19,6 +19,7 @@ from app.models import (
     Competition,
     CompetitionRegistration,
     CompetitionResult,
+    Announcement,
     Submission,
     Task,
     User,
@@ -31,6 +32,8 @@ from app.schemas import (
     CompetitionResultUpdate,
     AthleteProfileRead,
     AthleteQualificationUpdate,
+    AnnouncementCreate,
+    AnnouncementRead,
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
@@ -595,6 +598,152 @@ def update_profile(
     db.refresh(current_user)
 
     return build_user_me(current_user, db)
+
+
+@app.get("/api/announcements", response_model=list[AnnouncementRead])
+def get_announcements(
+    db: Session = Depends(get_db),
+):
+    return list(
+        db.scalars(
+            select(Announcement).order_by(
+                Announcement.created_at.desc(),
+                Announcement.id.desc(),
+            )
+        ).all()
+    )
+
+
+@app.get(
+    "/api/announcements/{announcement_id}",
+    response_model=AnnouncementRead,
+)
+def get_announcement(
+    announcement_id: int,
+    db: Session = Depends(get_db),
+):
+    announcement = db.get(Announcement, announcement_id)
+
+    if announcement is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Анонс не найден",
+        )
+
+    return announcement
+
+
+@app.post(
+    "/api/announcements",
+    response_model=AnnouncementRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_announcement(
+    announcement_data: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    title = announcement_data.title.strip()
+    content = announcement_data.content.strip()
+    image_url = (
+        announcement_data.image_url.strip()
+        if announcement_data.image_url
+        else None
+    )
+
+    if len(title) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название должно содержать минимум 3 символа",
+        )
+
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Введите текст анонса",
+        )
+
+    announcement = Announcement(
+        title=title,
+        content=content,
+        image_url=image_url,
+        created_by_user_id=current_user.id,
+    )
+
+    db.add(announcement)
+    db.commit()
+    db.refresh(announcement)
+
+    return announcement
+
+
+@app.patch(
+    "/api/announcements/{announcement_id}",
+    response_model=AnnouncementRead,
+)
+def update_announcement(
+    announcement_id: int,
+    announcement_data: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    announcement = db.get(Announcement, announcement_id)
+
+    if announcement is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Анонс не найден",
+        )
+
+    title = announcement_data.title.strip()
+    content = announcement_data.content.strip()
+    image_url = (
+        announcement_data.image_url.strip()
+        if announcement_data.image_url
+        else None
+    )
+
+    if len(title) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название должно содержать минимум 3 символа",
+        )
+
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Введите текст анонса",
+        )
+
+    announcement.title = title
+    announcement.content = content
+    announcement.image_url = image_url
+
+    db.commit()
+    db.refresh(announcement)
+
+    return announcement
+
+
+@app.delete(
+    "/api/announcements/{announcement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_announcement(
+    announcement_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    announcement = db.get(Announcement, announcement_id)
+
+    if announcement is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Анонс не найден",
+        )
+
+    db.delete(announcement)
+    db.commit()
 
 
 def get_solved_task_ids(
