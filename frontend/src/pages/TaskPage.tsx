@@ -14,6 +14,7 @@ type SubmissionStatus =
   | "time_limit_exceeded"
   | "compilation_error"
   | "compilation_timeout"
+  | "output_limit_exceeded"
   | "runner_error"
   | "no_tests";
 
@@ -27,6 +28,8 @@ type CompetitionTask = {
 type CurrentUser = {
   role: "participant" | "organizer";
 };
+
+const MAX_CODE_LENGTH = 100_000;
 
 type SavedSubmission = {
   code: string;
@@ -42,6 +45,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
   time_limit_exceeded: "Превышено время",
   compilation_error: "Ошибка компиляции",
   compilation_timeout: "Превышено время компиляции",
+  output_limit_exceeded: "Превышен лимит вывода",
   runner_error: "Ошибка системы проверки",
   no_tests: "Нет тестов",
 };
@@ -160,6 +164,11 @@ export default function TaskPage() {
 
   async function handleSubmit() {
     if (!task) {
+      return;
+    }
+
+    if (code.length > MAX_CODE_LENGTH) {
+      setError("Исходный код должен быть не больше 100 000 символов");
       return;
     }
 
