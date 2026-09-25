@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -1566,9 +1566,12 @@ def cleanup_expired_competition_submissions(
     )
 
     db.execute(
-        delete(Submission).where(
-            Submission.competition_id.in_(expired_competition_ids)
+        update(Submission)
+        .where(
+            Submission.competition_id.in_(expired_competition_ids),
+            Submission.code != "",
         )
+        .values(code="")
     )
     db.commit()
 
@@ -1878,6 +1881,7 @@ def get_latest_competition_submission(
             Submission.competition_id == competition_id,
             Submission.task_id == task_id,
             Submission.user_id == current_user.id,
+            Submission.code != "",
         )
         .order_by(
             Submission.created_at.desc(),
