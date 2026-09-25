@@ -24,9 +24,11 @@ from app.models import (
     Competition,
     CompetitionRegistration,
     CompetitionResult,
+    CompetitionTask,
     Announcement,
     Submission,
     Task,
+    TaskTest,
     User,
 )
 from app.schemas import (
@@ -35,6 +37,7 @@ from app.schemas import (
     CompetitionRead,
     CompetitionResultRead,
     CompetitionResultUpdate,
+    CompetitionTaskRead,
     AthleteProfileRead,
     AthleteQualificationRead,
     AthleteQualificationUpdate,
@@ -44,7 +47,11 @@ from app.schemas import (
     RankingEntry,
     SubmissionCreate,
     SubmissionRead,
+    TaskExampleData,
+    TaskOrganizerCreate,
+    TaskOrganizerRead,
     TaskRead,
+    TaskTestData,
     TokenRead,
     UserLogin,
     UserMe,
@@ -1476,20 +1483,464 @@ def register_for_competition(
 
 
 
+def get_task_examples(
+    db: Session,
+    task_id: int,
+) -> list[TaskExampleData]:
+    examples = db.scalars(
+        select(TaskTest)
+        .where(
+            TaskTest.task_id == task_id,
+            TaskTest.is_hidden.is_(False),
+        )
+        .order_by(TaskTest.id)
+    ).all()
+
+    return [
+        TaskExampleData(
+            input_data=example.input_data,
+            expected_output=example.expected_output,
+        )
+        for example in examples
+    ]
+
+
+def get_hidden_task_tests(
+    db: Session,
+    task_id: int,
+) -> list[TaskTestData]:
+    tests = db.scalars(
+        select(TaskTest)
+        .where(
+            TaskTest.task_id == task_id,
+            TaskTest.is_hidden.is_(True),
+        )
+        .order_by(TaskTest.id)
+    ).all()
+
+    return [
+        TaskTestData(
+            input_data=test.input_data,
+            expected_output=test.expected_output,
+        )
+        for test in tests
+    ]
+
+
+def build_task_read(
+    task: Task,
+    db: Session,
+    solved: bool = False,
+) -> TaskRead:
+    return TaskRead(
+        id=task.id,
+        title=task.title,
+        difficulty=task.difficulty,
+        solved=solved,
+        description=task.description,
+        input=task.input,
+        output=task.output,
+        constraints=task.constraints,
+        examples=get_task_examples(db, task.id),
+    )
+
+
+def build_task_organizer_read(
+    task: Task,
+    db: Session,
+) -> TaskOrganizerRead:
+    public_task = build_task_read(task, db)
+
+    return TaskOrganizerRead(
+        **public_task.model_dump(),
+        tests=get_hidden_task_tests(db, task.id),
+    )
+
+
+def task_is_collection_visible(
+    db: Session,
+    task_id: int,
+) -> bool:
+    links = db.execute(
+        select(CompetitionTask, Competition)
+        .join(
+            Competition,
+            Competition.id == CompetitionTask.competition_id,
+        )
+        .where(CompetitionTask.task_id == task_id)
+    ).all()
+
+    if not links:
+        return True
+
+    return any(
+        competition.publish_tasks_after_finish
+        and get_competition_status(competition) == "past"
+        for _, competition in links
+    )
+
+
+def get_competition_task_link(
+    db: Session,
+    competition_id: int,
+    task_id: int,
+) -> CompetitionTask | None:
+    return db.scalar(
+        select(CompetitionTask).where(
+            CompetitionTask.competition_id == competition_id,
+            CompetitionTask.task_id == task_id,
+        )
+    )
+
+
+def require_competition_task_access(
+    competition: Competition,
+    current_user: User,
+    db: Session,
+) -> None:
+    if current_user.role == "organizer":
+        return
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="У соревнования нет задач на платформе",
+        )
+
+    competition_status = get_competition_status(competition)
+
+    if competition_status == "future":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Задачи откроются после начала соревнования",
+        )
+
+    registration = db.scalar(
+        select(CompetitionRegistration).where(
+            CompetitionRegistration.competition_id == competition.id,
+            CompetitionRegistration.user_id == current_user.id,
+        )
+    )
+
+    if registration is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Задачи доступны только участникам соревнования",
+        )
+
+
+def replace_task_tests(
+    db: Session,
+    task: Task,
+    task_data: TaskOrganizerCreate,
+) -> None:
+    existing_tests = db.scalars(
+        select(TaskTest).where(TaskTest.task_id == task.id)
+    ).all()
+
+    for test in existing_tests:
+        db.delete(test)
+
+    for example in task_data.examples:
+        db.add(
+            TaskTest(
+                task_id=task.id,
+                input_data=example.input_data,
+                expected_output=example.expected_output,
+                is_hidden=False,
+            )
+        )
+
+    for test in task_data.tests:
+        db.add(
+            TaskTest(
+                task_id=task.id,
+                input_data=test.input_data,
+                expected_output=test.expected_output,
+                is_hidden=True,
+            )
+        )
+
+
+@app.get(
+    "/api/competitions/{competition_id}/tasks",
+    response_model=list[CompetitionTaskRead],
+)
+def get_competition_tasks(
+    competition_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    require_competition_task_access(
+        competition,
+        current_user,
+        db,
+    )
+
+    rows = db.execute(
+        select(CompetitionTask, Task)
+        .join(Task, Task.id == CompetitionTask.task_id)
+        .where(CompetitionTask.competition_id == competition_id)
+        .order_by(CompetitionTask.position)
+    ).all()
+
+    return [
+        CompetitionTaskRead(
+            task_id=task.id,
+            position=link.position,
+            title=task.title,
+            difficulty=task.difficulty,
+        )
+        for link, task in rows
+    ]
+
+
+@app.get(
+    "/api/competitions/{competition_id}/tasks/{task_id}",
+    response_model=TaskRead,
+)
+def get_competition_task(
+    competition_id: int,
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    require_competition_task_access(
+        competition,
+        current_user,
+        db,
+    )
+
+    if get_competition_task_link(db, competition_id, task_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена в этом соревновании",
+        )
+
+    task = db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    solved_task_ids = get_solved_task_ids(db, current_user)
+
+    return build_task_read(
+        task,
+        db,
+        solved=task.id in solved_task_ids,
+    )
+
+
+@app.post(
+    "/api/organizer/competitions/{competition_id}/tasks",
+    response_model=TaskOrganizerRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_competition_task(
+    competition_id: int,
+    task_data: TaskOrganizerCreate,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Задачи можно добавлять только для соревнований на платформе",
+        )
+
+    task = Task(
+        title=task_data.title.strip(),
+        difficulty=task_data.difficulty,
+        description=task_data.description.strip(),
+        input=task_data.input.strip(),
+        output=task_data.output.strip(),
+        constraints=task_data.constraints.strip(),
+    )
+    db.add(task)
+    db.flush()
+
+    max_position = db.scalar(
+        select(func.max(CompetitionTask.position)).where(
+            CompetitionTask.competition_id == competition_id
+        )
+    ) or 0
+
+    db.add(
+        CompetitionTask(
+            competition_id=competition_id,
+            task_id=task.id,
+            position=max_position + 1,
+        )
+    )
+
+    replace_task_tests(db, task, task_data)
+
+    db.commit()
+    db.refresh(task)
+
+    return build_task_organizer_read(task, db)
+
+
+@app.get(
+    "/api/organizer/competitions/{competition_id}/tasks/{task_id}",
+    response_model=TaskOrganizerRead,
+)
+def get_competition_task_for_organizer(
+    competition_id: int,
+    task_id: int,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if get_competition_task_link(db, competition_id, task_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена в этом соревновании",
+        )
+
+    task = db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    return build_task_organizer_read(task, db)
+
+
+@app.patch(
+    "/api/organizer/competitions/{competition_id}/tasks/{task_id}",
+    response_model=TaskOrganizerRead,
+)
+def update_competition_task(
+    competition_id: int,
+    task_id: int,
+    task_data: TaskOrganizerCreate,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if get_competition_task_link(db, competition_id, task_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена в этом соревновании",
+        )
+
+    task = db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    task.title = task_data.title.strip()
+    task.difficulty = task_data.difficulty
+    task.description = task_data.description.strip()
+    task.input = task_data.input.strip()
+    task.output = task_data.output.strip()
+    task.constraints = task_data.constraints.strip()
+
+    replace_task_tests(db, task, task_data)
+
+    db.commit()
+    db.refresh(task)
+
+    return build_task_organizer_read(task, db)
+
+
+@app.delete(
+    "/api/organizer/competitions/{competition_id}/tasks/{task_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_competition_task(
+    competition_id: int,
+    task_id: int,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    link = get_competition_task_link(
+        db,
+        competition_id,
+        task_id,
+    )
+
+    if link is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена в этом соревновании",
+        )
+
+    task = db.get(Task, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
+    db.delete(task)
+    db.commit()
+
+
 @app.get("/api/tasks", response_model=list[TaskRead])
 def get_tasks(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
-    statement = select(Task).order_by(Task.id)
-    tasks = db.scalars(statement).all()
+    tasks = db.scalars(select(Task).order_by(Task.id)).all()
     solved_task_ids = get_solved_task_ids(db, current_user)
 
     return [
-        TaskRead.model_validate(task).model_copy(
-            update={"solved": task.id in solved_task_ids}
+        build_task_read(
+            task,
+            db,
+            solved=task.id in solved_task_ids,
         )
         for task in tasks
+        if task_is_collection_visible(db, task.id)
     ]
 
 
@@ -1501,7 +1952,7 @@ def get_task(
 ):
     task = db.get(Task, task_id)
 
-    if task is None:
+    if task is None or not task_is_collection_visible(db, task_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена",
@@ -1509,8 +1960,10 @@ def get_task(
 
     solved_task_ids = get_solved_task_ids(db, current_user)
 
-    return TaskRead.model_validate(task).model_copy(
-        update={"solved": task.id in solved_task_ids}
+    return build_task_read(
+        task,
+        db,
+        solved=task.id in solved_task_ids,
     )
 
 
@@ -1532,8 +1985,54 @@ def create_submission(
             detail="Задача не найдена",
         )
 
+    if submission_data.competition_id is not None:
+        if current_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Требуется авторизация",
+            )
+
+        competition = db.get(
+            Competition,
+            submission_data.competition_id,
+        )
+
+        if competition is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Соревнование не найдено",
+            )
+
+        if get_competition_status(competition) != "active":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Отправлять решения можно только во время соревнования",
+            )
+
+        require_competition_task_access(
+            competition,
+            current_user,
+            db,
+        )
+
+        if get_competition_task_link(
+            db,
+            competition.id,
+            task.id,
+        ) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Задача не найдена в этом соревновании",
+            )
+    elif not task_is_collection_visible(db, task.id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена",
+        )
+
     submission = Submission(
         task_id=submission_data.task_id,
+        competition_id=submission_data.competition_id,
         user_id=current_user.id if current_user is not None else None,
         code=submission_data.code,
         language=submission_data.language,
