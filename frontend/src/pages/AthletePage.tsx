@@ -53,7 +53,7 @@ type AthleteProfile = {
   team_status: TeamStatus;
   team_name: string | null;
   rating: number;
-  rank: number;
+  rank: number | null;
   competitions: number;
   wins: number;
   podiums: number;
@@ -306,7 +306,9 @@ export default function AthletePage() {
               <div className="athlete-header-actions">
                 <div className="athlete-rating">
                   <strong>{athlete.rating}</strong>
-                  <span>Рейтинг · #{athlete.rank}</span>
+                  <span>
+                    Рейтинг · {athlete.rank === null ? "—" : `#${athlete.rank}`}
+                  </span>
                 </div>
 
                 {canManageOrganizerAccess && (
