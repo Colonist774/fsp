@@ -291,6 +291,14 @@ export default function AthletePage() {
       <Navbar />
 
       <main className="page athlete-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() => navigate(-1)}
+        >
+          ← Назад
+        </button>
+
         {error && <div className="auth-error">{error}</div>}
 
         {athlete && (
