@@ -3359,12 +3359,10 @@ nav a[aria-current="page"]::after {
 .rating-info-competition-row {
   display: grid;
   grid-template-columns:
-    140px
-    minmax(210px, 1.25fr)
-    minmax(160px, 0.9fr)
-    minmax(210px, 1.25fr);
+    130px
+    repeat(5, minmax(145px, 1fr));
   align-items: center;
-  min-width: 760px;
+  min-width: 900px;
   padding: 0 14px;
 }
 
