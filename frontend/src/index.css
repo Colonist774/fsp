@@ -2360,3 +2360,111 @@ nav a[aria-current="page"]::after {
     width: 100%;
   }
 }
+
+
+.organizer-access-page {
+  width: min(100% - 48px, 860px);
+}
+
+.organizer-probation-note {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid #5b4821;
+  border-radius: 6px;
+  background: #18140c;
+  color: #d7bd78;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.organizer-access-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.organizer-access-header,
+.organizer-access-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 1fr) 140px;
+  align-items: center;
+  gap: 18px;
+  padding: 0 18px;
+}
+
+.organizer-access-header {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.organizer-access-row {
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.organizer-access-row:last-child {
+  border-bottom: 0;
+}
+
+.organizer-access-row > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.organizer-access-row > div:first-child strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organizer-access-row > div:first-child span,
+.organizer-access-row > span {
+  color: var(--text-secondary);
+}
+
+.organizer-access-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.organizer-access-action button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #5e2b2b;
+  border-radius: 6px;
+  background: transparent;
+  color: #ff9b96;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.organizer-access-action button:hover:not(:disabled) {
+  background: #211315;
+}
+
+.organizer-access-action button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  .organizer-access-page {
+    width: min(100% - 28px, 860px);
+  }
+
+  .organizer-access-table {
+    overflow-x: auto;
+  }
+
+  .organizer-access-header,
+  .organizer-access-row {
+    min-width: 650px;
+  }
+}
