@@ -36,6 +36,7 @@ from app.schemas import (
     CompetitionResultRead,
     CompetitionResultUpdate,
     AthleteProfileRead,
+    AthleteQualificationRead,
     AthleteQualificationUpdate,
     AnnouncementCreate,
     AnnouncementRead,
@@ -657,7 +658,7 @@ def revoke_organizer_role(
 
 @app.patch(
     "/api/athletes/{user_id}/qualification",
-    response_model=AthleteQualificationUpdate,
+    response_model=AthleteQualificationRead,
 )
 def update_athlete_qualification(
     user_id: int,
@@ -681,8 +682,13 @@ def update_athlete_qualification(
     db.commit()
     db.refresh(athlete)
 
-    return AthleteQualificationUpdate(
+    return AthleteQualificationRead(
         sports_qualification=athlete.sports_qualification,
+        qualification_points=QUALIFICATION_POINTS.get(
+            athlete.sports_qualification or "",
+            0,
+        ),
+        rating=athlete.rating,
     )
 
 
