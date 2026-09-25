@@ -148,7 +148,7 @@ class CompetitionTaskRead(BaseModel):
 class SubmissionCreate(BaseModel):
     task_id: int
     competition_id: int | None = None
-    code: str
+    code: str = Field(min_length=1, max_length=100000)
     language: Language
 
 
