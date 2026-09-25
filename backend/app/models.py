@@ -224,6 +224,12 @@ class Task(Base):
         server_default="",
         nullable=False,
     )
+    test_revision: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        server_default="1",
+        nullable=False,
+    )
 
 
 class CompetitionTask(Base):
@@ -292,6 +298,10 @@ class Submission(Base):
         default="pending",
         server_default="pending",
         nullable=False,
+    )
+    judged_test_revision: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
