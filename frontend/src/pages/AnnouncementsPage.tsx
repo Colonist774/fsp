@@ -85,7 +85,7 @@ export default function AnnouncementsPage() {
 
       <main className="page announcements-page">
         <div className="announcements-heading">
-          <h1>Анонсы</h1>
+          <h1>Новости</h1>
 
           {role === "organizer" && (
             <button

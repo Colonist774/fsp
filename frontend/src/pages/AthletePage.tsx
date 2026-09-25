@@ -143,13 +143,6 @@ export default function AthletePage() {
       new Date(currentUser.organizer_probation_until).getTime() <= Date.now()
     );
 
-  const canManageOrganizerAccess =
-    currentUser?.role === "organizer" &&
-    (
-      currentUser.organizer_probation_until === null ||
-      new Date(currentUser.organizer_probation_until).getTime() <= Date.now()
-    );
-
   async function grantOrganizerRights() {
     const token = localStorage.getItem("token");
 

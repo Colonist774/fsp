@@ -90,17 +90,17 @@ export default function ContestsPage() {
           </button>
 
           <button
+            className={selectedTab === "future" ? "is-active" : ""}
+            onClick={() => setSelectedTab("future")}
+          >
+            Предстоящие
+          </button>
+
+          <button
             className={selectedTab === "past" ? "is-active" : ""}
             onClick={() => setSelectedTab("past")}
           >
             Завершенные
-          </button>
-
-          <button
-            className={selectedTab === "future" ? "is-active" : ""}
-            onClick={() => setSelectedTab("future")}
-          >
-            Будущие
           </button>
         </aside>
 
