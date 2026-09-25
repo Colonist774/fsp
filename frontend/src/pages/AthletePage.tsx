@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 type TeamStatus = "member" | "looking" | "solo";
@@ -58,12 +58,18 @@ function formatDate(dateString: string) {
 
 export default function AthletePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [athlete, setAthlete] = useState<AthleteProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [qualification, setQualification] = useState("");
   const [isSavingQualification, setIsSavingQualification] = useState(false);
   const [qualificationSaved, setQualificationSaved] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
+  const [promotionConfirmation, setPromotionConfirmation] = useState("");
+  const [isPromoting, setIsPromoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadAthlete() {
@@ -111,6 +117,69 @@ export default function AthletePage() {
 
     loadAthlete();
   }, [id]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
+
+  async function grantOrganizerRights() {
+    const token = localStorage.getItem("token");
+
+    if (
+      !token ||
+      !athlete ||
+      currentUser?.role !== "organizer" ||
+      promotionConfirmation !== "ПОДТВЕРДИТЬ"
+    ) {
+      return;
+    }
+
+    setError(null);
+    setIsPromoting(true);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/users/${athlete.id}/grant-organizer`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось присвоить права организатора",
+        );
+        return;
+      }
+
+      setIsPromotionModalOpen(false);
+      setPromotionConfirmation("");
+      navigate("/");
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsPromoting(false);
+    }
+  }
 
   async function saveQualification() {
     const token = localStorage.getItem("token");
@@ -189,9 +258,42 @@ export default function AthletePage() {
                 )}
               </div>
 
-              <div className="athlete-rating">
-                <strong>{athlete.rating}</strong>
-                <span>Рейтинг · #{athlete.rank}</span>
+              <div className="athlete-header-actions">
+                <div className="athlete-rating">
+                  <strong>{athlete.rating}</strong>
+                  <span>Рейтинг · #{athlete.rank}</span>
+                </div>
+
+                {currentUser?.role === "organizer" && (
+                  <div className="athlete-user-menu" ref={userMenuRef}>
+                    <button
+                      className="athlete-user-menu-trigger"
+                      type="button"
+                      aria-label="Действия с пользователем"
+                      aria-expanded={isUserMenuOpen}
+                      onClick={() =>
+                        setIsUserMenuOpen((current) => !current)
+                      }
+                    >
+                      ⋯
+                    </button>
+
+                    {isUserMenuOpen && (
+                      <div className="athlete-user-menu-dropdown">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            setPromotionConfirmation("");
+                            setIsPromotionModalOpen(true);
+                          }}
+                        >
+                          Присвоить права организатора
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
 
@@ -307,6 +409,71 @@ export default function AthletePage() {
               )}
             </section>
           </>
+        )}
+        {isPromotionModalOpen && athlete && (
+          <div
+            className="organizer-confirm-overlay"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !isPromoting) {
+                setIsPromotionModalOpen(false);
+                setPromotionConfirmation("");
+              }
+            }}
+          >
+            <div
+              className="organizer-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="organizer-confirm-title"
+            >
+              <h2 id="organizer-confirm-title">
+                Присвоить права организатора
+              </h2>
+
+              <p>
+                Вы уверены, что хотите присвоить{" "}
+                <strong>{athlete.username}</strong> права администратора?
+                Для завершения введите "ПОДТВЕРДИТЬ"
+              </p>
+
+              <input
+                type="text"
+                value={promotionConfirmation}
+                autoFocus
+                disabled={isPromoting}
+                placeholder="ПОДТВЕРДИТЬ"
+                onChange={(event) =>
+                  setPromotionConfirmation(event.target.value)
+                }
+              />
+
+              <div className="organizer-confirm-actions">
+                <button
+                  className="organizer-confirm-submit"
+                  type="button"
+                  disabled={
+                    isPromoting ||
+                    promotionConfirmation !== "ПОДТВЕРДИТЬ"
+                  }
+                  onClick={grantOrganizerRights}
+                >
+                  {isPromoting ? "Присвоение..." : "Присвоить"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isPromoting}
+                  onClick={() => {
+                    setIsPromotionModalOpen(false);
+                    setPromotionConfirmation("");
+                  }}
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </>
