@@ -287,7 +287,7 @@ export default function TaskPage() {
 
       <main className="task-workspace">
         <section className="task-statement">
-          {competitionId && (
+          {competitionId ? (
             <>
               <Link
                 className="task-contest-back"
@@ -314,6 +314,10 @@ export default function TaskPage() {
                 </div>
               )}
             </>
+          ) : (
+            <Link className="task-contest-back" to="/solve">
+              ← К сборнику задач
+            </Link>
           )}
 
           <h1>{task.title}</h1>
