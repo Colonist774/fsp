@@ -1839,7 +1839,8 @@ nav a[aria-current="page"]::after {
   gap: 10px;
 }
 
-.athlete-qualification-form input {
+.athlete-qualification-form input,
+.athlete-qualification-form select {
   width: 100%;
   height: 38px;
   padding: 0 11px;
@@ -1851,7 +1852,8 @@ nav a[aria-current="page"]::after {
   font-size: 14px;
 }
 
-.athlete-qualification-form input:focus {
+.athlete-qualification-form input:focus,
+.athlete-qualification-form select:focus {
   border-color: var(--accent);
 }
 
@@ -1872,7 +1874,8 @@ nav a[aria-current="page"]::after {
 }
 
 .athlete-qualification-form button:disabled,
-.athlete-qualification-form input:disabled {
+.athlete-qualification-form input:disabled,
+.athlete-qualification-form select:disabled {
   opacity: 0.55;
 }
 
