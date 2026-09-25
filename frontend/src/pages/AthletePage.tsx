@@ -49,7 +49,6 @@ type AthleteProfile = {
   education_org: string | null;
   sports_disciplines: string | null;
   sports_qualification: string | null;
-  qualification_points: number;
   bio: string | null;
   team_status: TeamStatus;
   team_name: string | null;
@@ -261,7 +260,6 @@ export default function AthletePage() {
           ? {
               ...current,
               sports_qualification: data.sports_qualification,
-              qualification_points: data.qualification_points,
               rating: data.rating,
               rank: data.rank,
             }
@@ -364,9 +362,7 @@ export default function AthletePage() {
               <div>
                 <span>Спортивное звание / разряд</span>
                 <strong>
-                  {athlete.sports_qualification
-                    ? `${athlete.sports_qualification} · +${athlete.qualification_points}`
-                    : "Отсутствует"}
+                  {athlete.sports_qualification || "Отсутствует"}
                 </strong>
               </div>
               <div>
