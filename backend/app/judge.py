@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Submission, TaskTest
+from app.models import Submission, Task, TaskTest
 from app.runner import RunResult, prepare_code
 
 
@@ -10,24 +10,51 @@ def normalize_output(value: str) -> str:
     return "\n".join(line.rstrip() for line in lines).strip()
 
 
-def judge_submission(db: Session, submission: Submission) -> Submission:
-    statement = (
-        select(TaskTest)
-        .where(
-            TaskTest.task_id == submission.task_id,
-            TaskTest.is_hidden.is_(True),
-        )
-        .order_by(TaskTest.id)
+def _current_task_revision(
+    db: Session,
+    task_id: int,
+) -> int | None:
+    task = db.scalar(
+        select(Task)
+        .where(Task.id == task_id)
+        .with_for_update()
     )
-    tests = db.scalars(statement).all()
 
-    if not tests:
-        submission.status = "no_tests"
+    return task.test_revision if task is not None else None
+
+
+def _save_final_status(
+    db: Session,
+    submission: Submission,
+    status: str,
+    tested_revision: int,
+) -> bool:
+    current_revision = _current_task_revision(
+        db,
+        submission.task_id,
+    )
+
+    if current_revision is None:
+        submission.status = "runner_error"
+        submission.judged_test_revision = None
         db.commit()
         db.refresh(submission)
-        return submission
+        return True
 
+    if current_revision != tested_revision:
+        db.commit()
+        return False
+
+    submission.status = status
+    submission.judged_test_revision = tested_revision
+    db.commit()
+    db.refresh(submission)
+    return True
+
+
+def judge_submission(db: Session, submission: Submission) -> Submission:
     submission.status = "running"
+    submission.judged_test_revision = None
     db.commit()
 
     with prepare_code(
@@ -35,29 +62,62 @@ def judge_submission(db: Session, submission: Submission) -> Submission:
         code=submission.code,
     ) as prepared:
         if isinstance(prepared, RunResult):
-            submission.status = prepared.status
-            db.commit()
-            db.refresh(submission)
+            task = db.get(Task, submission.task_id)
+            revision = task.test_revision if task is not None else 0
+
+            _save_final_status(
+                db,
+                submission,
+                prepared.status,
+                revision,
+            )
             return submission
 
-        for test in tests:
-            result = prepared.run(test.input_data)
+        while True:
+            task = db.get(Task, submission.task_id)
 
-            if result.status != "ok":
-                submission.status = result.status
+            if task is None:
+                submission.status = "runner_error"
+                submission.judged_test_revision = None
                 db.commit()
                 db.refresh(submission)
                 return submission
 
-            if normalize_output(result.stdout) != normalize_output(
-                test.expected_output
+            db.refresh(task)
+            tested_revision = task.test_revision
+
+            statement = (
+                select(TaskTest)
+                .where(
+                    TaskTest.task_id == submission.task_id,
+                    TaskTest.is_hidden.is_(True),
+                )
+                .order_by(TaskTest.id)
+            )
+            tests = db.scalars(statement).all()
+
+            if not tests:
+                final_status = "no_tests"
+            else:
+                final_status = "accepted"
+
+                for test in tests:
+                    result = prepared.run(test.input_data)
+
+                    if result.status != "ok":
+                        final_status = result.status
+                        break
+
+                    if normalize_output(result.stdout) != normalize_output(
+                        test.expected_output
+                    ):
+                        final_status = "wrong_answer"
+                        break
+
+            if _save_final_status(
+                db,
+                submission,
+                final_status,
+                tested_revision,
             ):
-                submission.status = "wrong_answer"
-                db.commit()
-                db.refresh(submission)
                 return submission
-
-    submission.status = "accepted"
-    db.commit()
-    db.refresh(submission)
-    return submission
