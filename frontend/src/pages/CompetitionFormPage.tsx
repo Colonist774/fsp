@@ -378,6 +378,12 @@ export default function CompetitionFormPage() {
               </span>
             </label>
 
+            {conductMode === "platform" && (
+              <p className="competition-form-help">
+                Задачи добавляются на странице соревнования после его сохранения.
+              </p>
+            )}
+
             {error && <div className="auth-error">{error}</div>}
 
             <button
