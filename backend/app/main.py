@@ -682,6 +682,16 @@ def update_athlete_qualification(
     db.commit()
     db.refresh(athlete)
 
+    participants = get_ranked_participants(db)
+    rank = next(
+        (
+            index
+            for index, participant in enumerate(participants, start=1)
+            if participant.id == athlete.id
+        ),
+        len(participants),
+    )
+
     return AthleteQualificationRead(
         sports_qualification=athlete.sports_qualification,
         qualification_points=QUALIFICATION_POINTS.get(
@@ -689,6 +699,7 @@ def update_athlete_qualification(
             0,
         ),
         rating=athlete.rating,
+        rank=rank,
     )
 
 
