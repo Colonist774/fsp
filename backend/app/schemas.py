@@ -238,12 +238,27 @@ class CompetitionResultSummary(BaseModel):
     rating_points: int
 
 
+class UserCompetitionSummary(BaseModel):
+    competition_id: int
+    title: str
+    discipline: str
+    format: CompetitionFormat
+    conduct_mode: CompetitionConductMode
+    status: CompetitionStatus
+    start_at: datetime
+    end_at: datetime
+    registered_at: datetime
+    finished_at: datetime | None = None
+    place: int | None = None
+
+
 class UserStatistics(BaseModel):
     rating: int
     rank: int | None
     competitions: int
     wins: int
     podiums: int
+    my_competitions: list[UserCompetitionSummary]
     recent_results: list[CompetitionResultSummary]
 
 
