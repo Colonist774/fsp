@@ -2728,7 +2728,7 @@ nav a[aria-current="page"]::after {
 
 .competition-task-main {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 90px;
+  grid-template-columns: 34px minmax(0, 1fr) 170px;
   align-items: center;
   gap: 12px;
   min-height: 52px;
