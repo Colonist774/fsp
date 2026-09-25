@@ -13,7 +13,10 @@ def normalize_output(value: str) -> str:
 def judge_submission(db: Session, submission: Submission) -> Submission:
     statement = (
         select(TaskTest)
-        .where(TaskTest.task_id == submission.task_id)
+        .where(
+            TaskTest.task_id == submission.task_id,
+            TaskTest.is_hidden.is_(True),
+        )
         .order_by(TaskTest.id)
     )
     tests = db.scalars(statement).all()
