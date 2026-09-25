@@ -94,6 +94,10 @@ class Competition(Base):
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     registration_deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    results_finalized_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     publish_tasks_after_finish: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
