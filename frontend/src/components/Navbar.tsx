@@ -118,6 +118,17 @@ export default function Navbar() {
                 Организаторы
               </button>
             )}
+            {role === "organizer" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate("/organizer/access");
+                }}
+              >
+                Организаторы
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
