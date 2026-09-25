@@ -2918,3 +2918,73 @@ nav a[aria-current="page"]::after {
   font-size: 12px;
   line-height: 1.5;
 }
+
+
+.task-contest-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.task-contest-tabs a {
+  min-width: 34px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.task-contest-tabs a:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.task-contest-tabs a.is-active {
+  border-color: #2f6fce;
+  background: #14243a;
+  color: #79b8ff;
+}
+
+.task-editor-primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-finish {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #5e2b2b;
+  border-radius: 6px;
+  background: transparent;
+  color: #ff9b96;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-finish:hover:not(:disabled) {
+  background: #211315;
+}
+
+.task-finish:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  .task-editor-primary-actions {
+    gap: 6px;
+  }
+
+  .task-finish {
+    padding: 0 9px;
+  }
+}
