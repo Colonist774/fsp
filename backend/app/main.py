@@ -1313,13 +1313,13 @@ def get_platform_competition_standings(
             )
 
     ordered_scores = sorted(
-        set(scores.values()),
+        scores.values(),
         reverse=True,
     )
-    place_by_score = {
-        score: index
-        for index, score in enumerate(ordered_scores, start=1)
-    }
+    place_by_score: dict[int, int] = {}
+
+    for index, score in enumerate(ordered_scores, start=1):
+        place_by_score.setdefault(score, index)
 
     return {
         user_id: (
