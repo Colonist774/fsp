@@ -499,6 +499,36 @@ def get_athlete_profile(
     )
 
 
+@app.post(
+    "/api/users/{user_id}/grant-organizer",
+    response_model=UserRead,
+)
+def grant_organizer_role(
+    user_id: int,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    user = db.get(User, user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+    if user.role == "organizer":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь уже является организатором",
+        )
+
+    user.role = "organizer"
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
 @app.patch(
     "/api/athletes/{user_id}/qualification",
     response_model=AthleteQualificationUpdate,
