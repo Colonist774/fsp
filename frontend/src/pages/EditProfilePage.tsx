@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 type TeamStatus = "member" | "looking" | "solo";
@@ -22,6 +23,7 @@ type ApiResponse = CurrentUser & {
 };
 
 export default function EditProfilePage() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
@@ -179,6 +181,14 @@ export default function EditProfilePage() {
       <Navbar />
 
       <main className="page profile-edit-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() => navigate(-1)}
+        >
+          ← Назад
+        </button>
+
         <h1>Редактировать профиль</h1>
 
         <form className="profile-edit-form" onSubmit={handleSubmit}>
