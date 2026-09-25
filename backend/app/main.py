@@ -1305,6 +1305,15 @@ def update_competition(
             detail="Соревнование не найдено",
         )
 
+    if get_competition_status(competition) == "past":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Завершённое соревнование нельзя редактировать, "
+                "чтобы сохранить опубликованные результаты и рейтинг"
+            ),
+        )
+
     validate_competition_data(competition_data)
 
     for field, value in competition_data.model_dump().items():
@@ -1337,8 +1346,14 @@ def get_platform_competition_standings(
         return {}
 
     registrations = db.scalars(
-        select(CompetitionRegistration).where(
-            CompetitionRegistration.competition_id == competition_id
+        select(CompetitionRegistration)
+        .join(
+            User,
+            User.id == CompetitionRegistration.user_id,
+        )
+        .where(
+            CompetitionRegistration.competition_id == competition_id,
+            User.role == "participant",
         )
     ).all()
 
@@ -1420,10 +1435,16 @@ def has_unfinished_competition_submissions(
     db: Session,
     competition: Competition,
 ) -> bool:
-    registered_user_ids = select(
-        CompetitionRegistration.user_id
-    ).where(
-        CompetitionRegistration.competition_id == competition.id
+    registered_user_ids = (
+        select(CompetitionRegistration.user_id)
+        .join(
+            User,
+            User.id == CompetitionRegistration.user_id,
+        )
+        .where(
+            CompetitionRegistration.competition_id == competition.id,
+            User.role == "participant",
+        )
     )
 
     submission_id = db.scalar(
@@ -1470,6 +1491,10 @@ def sync_platform_competition_results(
             )
         ).all()
     }
+
+    for user_id, result in existing_results.items():
+        if user_id not in standings:
+            db.delete(result)
 
     for user_id, (_, place) in standings.items():
         result = existing_results.get(user_id)
