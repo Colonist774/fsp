@@ -62,16 +62,25 @@ def judge_submission(db: Session, submission: Submission) -> Submission:
         code=submission.code,
     ) as prepared:
         if isinstance(prepared, RunResult):
-            task = db.get(Task, submission.task_id)
-            revision = task.test_revision if task is not None else 0
+            while True:
+                task = db.get(Task, submission.task_id)
 
-            _save_final_status(
-                db,
-                submission,
-                prepared.status,
-                revision,
-            )
-            return submission
+                if task is None:
+                    submission.status = "runner_error"
+                    submission.judged_test_revision = None
+                    db.commit()
+                    db.refresh(submission)
+                    return submission
+
+                db.refresh(task)
+
+                if _save_final_status(
+                    db,
+                    submission,
+                    prepared.status,
+                    task.test_revision,
+                ):
+                    return submission
 
         while True:
             task = db.get(Task, submission.task_id)
