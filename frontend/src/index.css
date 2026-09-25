@@ -3172,3 +3172,223 @@ nav a[aria-current="page"]::after {
     min-width: 520px;
   }
 }
+
+
+.rating-page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.rating-page-heading h1 {
+  margin-bottom: 0;
+}
+
+.rating-info-link {
+  margin-top: 7px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rating-info-link:hover {
+  color: var(--text);
+}
+
+.rating-info-page {
+  width: min(100% - 48px, 920px);
+}
+
+.rating-info-back {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.rating-info-back:hover {
+  color: var(--text);
+}
+
+.rating-info-heading {
+  margin-bottom: 28px;
+}
+
+.rating-info-heading h1 {
+  margin-bottom: 10px;
+}
+
+.rating-info-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: #b8c0ca;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.rating-info-section {
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.rating-info-section-heading {
+  margin-bottom: 16px;
+}
+
+.rating-info-section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.rating-info-section-heading p {
+  margin: 7px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.rating-info-table-wrap {
+  overflow-x: auto;
+}
+
+.rating-info-competition-table,
+.rating-info-qualification-table {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.rating-info-competition-header,
+.rating-info-competition-row {
+  display: grid;
+  grid-template-columns:
+    140px
+    minmax(210px, 1.25fr)
+    minmax(160px, 0.9fr)
+    minmax(210px, 1.25fr);
+  align-items: center;
+  min-width: 760px;
+  padding: 0 14px;
+}
+
+.rating-info-competition-header {
+  min-height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rating-info-competition-header span {
+  display: grid;
+  gap: 2px;
+}
+
+.rating-info-competition-header small {
+  color: #6f7883;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.rating-info-competition-row {
+  min-height: 48px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.rating-info-competition-row:last-child {
+  border-bottom: 0;
+}
+
+.rating-info-competition-row strong {
+  font-weight: 600;
+}
+
+.rating-info-competition-row span {
+  color: #c8d0d8;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-info-qualification-header,
+.rating-info-qualification-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 20px;
+  padding: 0 14px;
+}
+
+.rating-info-qualification-header {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rating-info-qualification-row {
+  min-height: 48px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.rating-info-qualification-row:last-child {
+  border-bottom: 0;
+}
+
+.rating-info-qualification-row > span {
+  color: #c8d0d8;
+}
+
+.rating-info-qualification-row strong {
+  justify-self: end;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-info-formula {
+  display: grid;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 15px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1117;
+}
+
+.rating-info-formula strong {
+  font-size: 13px;
+}
+
+.rating-info-formula span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .rating-page-heading {
+    align-items: flex-start;
+  }
+
+  .rating-info-page {
+    width: min(100% - 28px, 920px);
+  }
+
+  .rating-info-section {
+    padding: 18px;
+  }
+
+  .rating-info-qualification-header,
+  .rating-info-qualification-row {
+    grid-template-columns: minmax(0, 1fr) 80px;
+  }
+}
