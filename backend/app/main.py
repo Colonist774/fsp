@@ -408,10 +408,6 @@ def get_my_statistics(
 
     return UserStatistics(
         rating=current_user.rating,
-        qualification_points=QUALIFICATION_POINTS.get(
-            current_user.sports_qualification or "",
-            0,
-        ),
         rank=rank,
         competitions=competitions_count,
         wins=wins_count,
@@ -519,10 +515,6 @@ def get_athlete_profile(
         education_org=athlete.education_org,
         sports_disciplines=athlete.sports_disciplines,
         sports_qualification=athlete.sports_qualification,
-        qualification_points=QUALIFICATION_POINTS.get(
-            athlete.sports_qualification or "",
-            0,
-        ),
         bio=athlete.bio,
         team_status=athlete.team_status,
         team_name=athlete.team_name,
