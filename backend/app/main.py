@@ -1121,9 +1121,14 @@ def get_solved_task_ids(
 
     statement = (
         select(Submission.task_id)
+        .join(
+            Task,
+            Task.id == Submission.task_id,
+        )
         .where(
             Submission.user_id == current_user.id,
             Submission.status == "accepted",
+            Submission.judged_test_revision == Task.test_revision,
         )
         .distinct()
     )
@@ -1364,9 +1369,14 @@ def get_platform_competition_standings(
                 Submission.user_id,
                 Submission.task_id,
             )
+            .join(
+                Task,
+                Task.id == Submission.task_id,
+            )
             .where(
                 Submission.competition_id == competition_id,
                 Submission.status == "accepted",
+                Submission.judged_test_revision == Task.test_revision,
                 Submission.user_id.in_(user_ids),
                 Submission.task_id.in_(list(points_by_task)),
                 Submission.created_at <= competition.end_at,
@@ -2086,6 +2096,32 @@ def replace_task_tests(
         )
 
 
+def hidden_task_tests_changed(
+    db: Session,
+    task: Task,
+    task_data: TaskOrganizerCreate,
+) -> bool:
+    existing_tests = db.scalars(
+        select(TaskTest)
+        .where(
+            TaskTest.task_id == task.id,
+            TaskTest.is_hidden.is_(True),
+        )
+        .order_by(TaskTest.id)
+    ).all()
+
+    existing_signature = [
+        (test.input_data, test.expected_output)
+        for test in existing_tests
+    ]
+    incoming_signature = [
+        (test.input_data, test.expected_output)
+        for test in task_data.tests
+    ]
+
+    return existing_signature != incoming_signature
+
+
 @app.get(
     "/api/competitions/{competition_id}/tasks",
     response_model=list[CompetitionTaskRead],
@@ -2375,13 +2411,43 @@ def update_competition_task(
             detail="Задача не найдена в этом соревновании",
         )
 
-    task = db.get(Task, task_id)
+    task = db.scalar(
+        select(Task)
+        .where(Task.id == task_id)
+        .with_for_update()
+    )
 
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена",
         )
+
+    hidden_tests_changed = hidden_task_tests_changed(
+        db,
+        task,
+        task_data,
+    )
+
+    if hidden_tests_changed:
+        expired_submission_id = db.scalar(
+            select(Submission.id)
+            .where(
+                Submission.task_id == task.id,
+                Submission.competition_id.is_not(None),
+                Submission.code == "",
+            )
+            .limit(1)
+        )
+
+        if expired_submission_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Скрытые тесты нельзя изменить: исходный код "
+                    "части старых решений уже удалён"
+                ),
+            )
 
     task.title = task_data.title.strip()
     task.difficulty = task_data.difficulty
@@ -2391,10 +2457,96 @@ def update_competition_task(
     task.constraints = task_data.constraints.strip()
     link.points = task_data.points
 
+    if hidden_tests_changed:
+        task.test_revision += 1
+
     replace_task_tests(db, task, task_data)
 
-    if get_competition_status(competition) == "past":
-        sync_platform_competition_results(db, competition)
+    if not hidden_tests_changed:
+        if get_competition_status(competition) == "past":
+            sync_platform_competition_results(db, competition)
+
+        db.commit()
+        db.refresh(task)
+
+        return build_task_organizer_read(
+            task,
+            db,
+            task_data.points,
+        )
+
+    linked_competitions = list(
+        db.scalars(
+            select(Competition)
+            .join(
+                CompetitionTask,
+                CompetitionTask.competition_id == Competition.id,
+            )
+            .where(
+                CompetitionTask.task_id == task.id,
+                Competition.conduct_mode == "platform",
+            )
+        ).all()
+    )
+
+    for linked_competition in linked_competitions:
+        if get_competition_status(linked_competition) == "past":
+            linked_competition.results_finalized_at = None
+
+    submissions_to_rejudge = list(
+        db.scalars(
+            select(Submission)
+            .where(
+                Submission.task_id == task.id,
+                Submission.code != "",
+            )
+            .order_by(Submission.id)
+        ).all()
+    )
+
+    rejudge_ids: list[int] = []
+
+    for submission in submissions_to_rejudge:
+        if submission.status in ("pending", "running"):
+            continue
+
+        submission.status = "pending"
+        submission.judged_test_revision = None
+        rejudge_ids.append(submission.id)
+
+    # Publish the new test revision and mark previous verdicts stale before
+    # starting potentially long Docker rechecks.
+    db.commit()
+
+    for submission_id in rejudge_ids:
+        submission = db.get(Submission, submission_id)
+
+        if submission is not None and submission.code:
+            judge_submission(
+                db,
+                submission,
+            )
+
+    linked_competition_ids = [
+        linked_competition.id
+        for linked_competition in linked_competitions
+    ]
+
+    for linked_competition_id in linked_competition_ids:
+        linked_competition = db.scalar(
+            select(Competition)
+            .where(Competition.id == linked_competition_id)
+            .with_for_update()
+        )
+
+        if (
+            linked_competition is not None
+            and get_competition_status(linked_competition) == "past"
+        ):
+            sync_platform_competition_results(
+                db,
+                linked_competition,
+            )
 
     db.commit()
     db.refresh(task)
@@ -2402,7 +2554,7 @@ def update_competition_task(
     return build_task_organizer_read(
         task,
         db,
-        link.points,
+        task_data.points,
     )
 
 
