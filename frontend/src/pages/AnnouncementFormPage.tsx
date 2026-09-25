@@ -244,6 +244,19 @@ export default function AnnouncementFormPage() {
       <>
         <Navbar />
         <main className="page announcement-form-page">
+          <button
+            className="page-back"
+            type="button"
+            onClick={() =>
+              navigate(
+                isEditing && id
+                  ? `/announcements/${id}`
+                  : "/announcements",
+              )
+            }
+          >
+            {isEditing ? "← К анонсу" : "← К анонсам"}
+          </button>
           <div className="auth-error">Недостаточно прав</div>
         </main>
       </>
@@ -255,6 +268,19 @@ export default function AnnouncementFormPage() {
       <Navbar />
 
       <main className="page announcement-form-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() =>
+            navigate(
+              isEditing && id
+                ? `/announcements/${id}`
+                : "/announcements",
+            )
+          }
+        >
+          {isEditing ? "← К анонсу" : "← К анонсам"}
+        </button>
         <h1>
           {isEditing ? "Редактировать анонс" : "Создать анонс"}
         </h1>
