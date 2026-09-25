@@ -205,6 +205,20 @@ def get_me(
 
 
 
+QUALIFICATION_POINTS: dict[str, int] = {
+    "Заслуженный мастер спорта России (ЗМС)": 5000,
+    "Мастер спорта России международного класса (МСМК): Гроссмейстер России": 4000,
+    "Мастер спорта России (МС)": 3000,
+    "Кандидат в мастера спорта России (КМС)": 2000,
+    "1-й спортивный разряд": 1500,
+    "2-й спортивный разряд": 1000,
+    "3-й спортивный разряд": 800,
+    "1-й юношеский разряд": 500,
+    "2-й юношеский разряд": 400,
+    "3-й юношеский разряд": 300,
+}
+
+
 RATING_POINTS_BY_LEVEL: dict[str, dict[int, int]] = {
     "russia": {
         1: 500,
@@ -306,10 +320,16 @@ def recalculate_user_rating(
         )
     ).all()
 
-    user.rating = sum(
+    competition_points = sum(
         get_rating_points(level, place)
         for level, place in rows
     )
+    qualification_points = QUALIFICATION_POINTS.get(
+        user.sports_qualification or "",
+        0,
+    )
+
+    user.rating = competition_points + qualification_points
 
 
 def get_ranked_participants(
@@ -387,6 +407,10 @@ def get_my_statistics(
 
     return UserStatistics(
         rating=current_user.rating,
+        qualification_points=QUALIFICATION_POINTS.get(
+            current_user.sports_qualification or "",
+            0,
+        ),
         rank=rank,
         competitions=competitions_count,
         wins=wins_count,
@@ -494,6 +518,10 @@ def get_athlete_profile(
         education_org=athlete.education_org,
         sports_disciplines=athlete.sports_disciplines,
         sports_qualification=athlete.sports_qualification,
+        qualification_points=QUALIFICATION_POINTS.get(
+            athlete.sports_qualification or "",
+            0,
+        ),
         bio=athlete.bio,
         team_status=athlete.team_status,
         team_name=athlete.team_name,
@@ -645,13 +673,11 @@ def update_athlete_qualification(
             detail="Спортсмен не найден",
         )
 
-    qualification = (
-        qualification_data.sports_qualification.strip()
-        if qualification_data.sports_qualification
-        else None
+    athlete.sports_qualification = (
+        qualification_data.sports_qualification
     )
+    recalculate_user_rating(db, athlete.id)
 
-    athlete.sports_qualification = qualification
     db.commit()
     db.refresh(athlete)
 
