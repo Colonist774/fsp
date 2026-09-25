@@ -17,6 +17,7 @@ type TaskOrganizerRead = {
   id: number;
   title: string;
   difficulty: number;
+  points: number;
   description: string;
   input: string;
   output: string;
@@ -39,6 +40,7 @@ export default function TaskFormPage() {
 
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState(1);
+  const [points, setPoints] = useState(100);
   const [description, setDescription] = useState("");
   const [inputFormat, setInputFormat] = useState("");
   const [outputFormat, setOutputFormat] = useState("");
@@ -110,6 +112,7 @@ export default function TaskFormPage() {
 
         setTitle(task.title);
         setDifficulty(task.difficulty);
+        setPoints(task.points);
         setDescription(task.description);
         setInputFormat(task.input);
         setOutputFormat(task.output);
@@ -197,6 +200,7 @@ export default function TaskFormPage() {
           body: JSON.stringify({
             title: title.trim(),
             difficulty,
+            points,
             description: description.trim(),
             input: inputFormat.trim(),
             output: outputFormat.trim(),
@@ -290,6 +294,20 @@ export default function TaskFormPage() {
                   <option value={4}>4 звезды</option>
                   <option value={5}>5 звёзд</option>
                 </select>
+              </label>
+
+              <label className="task-author-difficulty">
+                <span>Баллы за решение</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={points}
+                  required
+                  onChange={(event) =>
+                    setPoints(Number(event.target.value))
+                  }
+                />
               </label>
 
               <label>
