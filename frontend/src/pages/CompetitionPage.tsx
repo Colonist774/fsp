@@ -408,19 +408,20 @@ export default function CompetitionPage() {
             <h1>{competition.title}</h1>
           </div>
 
-          {role === "organizer" && (
-            <button
-              className="competition-edit"
-              type="button"
-              onClick={() =>
-                navigate(
-                  `/organizer/competitions/${competition.id}/edit`,
-                )
-              }
-            >
-              Редактировать
-            </button>
-          )}
+          {role === "organizer" &&
+            competition.status !== "past" && (
+              <button
+                className="competition-edit"
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/organizer/competitions/${competition.id}/edit`,
+                  )
+                }
+              >
+                Редактировать
+              </button>
+            )}
         </div>
 
         <section className="competition-details">
