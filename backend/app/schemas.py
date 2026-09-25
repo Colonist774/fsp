@@ -68,6 +68,7 @@ class CompetitionParticipantRead(BaseModel):
     team_name: str | None
     registered_at: datetime
     finished_at: datetime | None = None
+    score: int | None = None
     place: int | None = None
 
 
@@ -78,6 +79,7 @@ class CompetitionResultUpdate(BaseModel):
 class CompetitionResultRead(BaseModel):
     user_id: int
     username: str
+    score: int | None = None
     place: int | None
     rating_points: int
 
@@ -119,6 +121,7 @@ class TaskBase(BaseModel):
 
 
 class TaskOrganizerCreate(TaskBase):
+    points: int = Field(default=100, ge=1, le=10000)
     examples: list[TaskExampleData] = Field(min_length=1, max_length=10)
     tests: list[TaskTestData] = Field(min_length=1, max_length=100)
 
@@ -130,6 +133,7 @@ class TaskRead(TaskBase):
 
 
 class TaskOrganizerRead(TaskRead):
+    points: int
     tests: list[TaskTestData] = Field(default_factory=list)
 
 
@@ -138,6 +142,7 @@ class CompetitionTaskRead(BaseModel):
     position: int
     title: str
     difficulty: int
+    points: int
 
 
 class SubmissionCreate(BaseModel):
