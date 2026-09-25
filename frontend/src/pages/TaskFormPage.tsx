@@ -1,4 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
@@ -129,7 +135,7 @@ export default function TaskFormPage() {
   }, [competitionId, taskId, isEditing]);
 
   function updateCase(
-    setter: React.Dispatch<React.SetStateAction<TestCase[]>>,
+    setter: Dispatch<SetStateAction<TestCase[]>>,
     index: number,
     field: keyof TestCase,
     value: string,
@@ -144,7 +150,7 @@ export default function TaskFormPage() {
   }
 
   function removeCase(
-    setter: React.Dispatch<React.SetStateAction<TestCase[]>>,
+    setter: Dispatch<SetStateAction<TestCase[]>>,
     index: number,
   ) {
     setter((current) =>
