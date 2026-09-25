@@ -1159,6 +1159,8 @@ def get_competitions(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
+    cleanup_expired_competition_submissions(db)
+
     competitions = db.scalars(
         select(Competition).order_by(Competition.start_at)
     ).all()
