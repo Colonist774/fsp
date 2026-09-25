@@ -574,6 +574,11 @@ def get_athlete_profile(
         if place <= 3
     )
 
+    full_name_visible = (
+        not athlete.hide_full_name
+        or current_user.role == "organizer"
+        or current_user.id == athlete.id
+    )
     locality_visible = (
         not athlete.hide_locality
         or current_user.role == "organizer"
@@ -583,7 +588,7 @@ def get_athlete_profile(
     return AthleteProfileRead(
         id=athlete.id,
         username=athlete.username,
-        full_name=athlete.full_name,
+        full_name=athlete.full_name if full_name_visible else None,
         hide_full_name=athlete.hide_full_name,
         locality=athlete.locality if locality_visible else None,
         hide_locality=athlete.hide_locality,
