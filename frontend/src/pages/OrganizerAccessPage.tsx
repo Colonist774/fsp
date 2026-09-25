@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
 type CurrentUser = {
@@ -24,6 +25,7 @@ function formatDate(dateString: string) {
 }
 
 export default function OrganizerAccessPage() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
   const [revokingId, setRevokingId] = useState<number | null>(null);
@@ -140,6 +142,14 @@ export default function OrganizerAccessPage() {
       <Navbar />
 
       <main className="page organizer-access-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() => navigate(-1)}
+        >
+          ← Назад
+        </button>
+
         <h1>Организаторы</h1>
 
         {error && <div className="auth-error">{error}</div>}
