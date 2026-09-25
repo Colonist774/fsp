@@ -7,6 +7,18 @@ from pydantic import BaseModel, ConfigDict, Field
 Language = Literal["python", "javascript", "cpp", "java"]
 UserRole = Literal["participant", "organizer"]
 TeamStatus = Literal["member", "looking", "solo"]
+SportsQualification = Literal[
+    "Заслуженный мастер спорта России (ЗМС)",
+    "Мастер спорта России международного класса (МСМК): Гроссмейстер России",
+    "Мастер спорта России (МС)",
+    "Кандидат в мастера спорта России (КМС)",
+    "1-й спортивный разряд",
+    "2-й спортивный разряд",
+    "3-й спортивный разряд",
+    "1-й юношеский разряд",
+    "2-й юношеский разряд",
+    "3-й юношеский разряд",
+]
 CompetitionLevel = Literal[
     "russia",
     "all_russian",
@@ -150,7 +162,7 @@ class UserMe(UserRead):
     hide_locality: bool
     education_org: str | None
     sports_disciplines: str | None
-    sports_qualification: str | None
+    sports_qualification: SportsQualification | None
     team_status: TeamStatus
     team_name: str | None
     solved_tasks: int
@@ -183,6 +195,7 @@ class CompetitionResultSummary(BaseModel):
 
 class UserStatistics(BaseModel):
     rating: int
+    qualification_points: int
     rank: int | None
     competitions: int
     wins: int
@@ -191,7 +204,7 @@ class UserStatistics(BaseModel):
 
 
 class AthleteQualificationUpdate(BaseModel):
-    sports_qualification: str | None = Field(default=None, max_length=120)
+    sports_qualification: SportsQualification | None = None
 
 
 class AthleteResultRead(BaseModel):
@@ -211,7 +224,8 @@ class AthleteProfileRead(BaseModel):
     hide_locality: bool
     education_org: str | None
     sports_disciplines: str | None
-    sports_qualification: str | None
+    sports_qualification: SportsQualification | None
+    qualification_points: int
     bio: str | None
     team_status: TeamStatus
     team_name: str | None
