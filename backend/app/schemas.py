@@ -54,6 +54,7 @@ class CompetitionRead(CompetitionBase):
     status: CompetitionStatus
     registration_open: bool
     is_registered: bool = False
+    participation_finished: bool = False
     registered_count: int = 0
     created_by_user_id: int | None
     created_at: datetime
@@ -66,6 +67,7 @@ class CompetitionParticipantRead(BaseModel):
     team_status: TeamStatus
     team_name: str | None
     registered_at: datetime
+    finished_at: datetime | None = None
     place: int | None = None
 
 
@@ -143,6 +145,13 @@ class SubmissionCreate(BaseModel):
     competition_id: int | None = None
     code: str
     language: Language
+
+
+class CompetitionSubmissionDraftRead(BaseModel):
+    code: str
+    language: Language
+    status: str
+    created_at: datetime
 
 
 class SubmissionRead(BaseModel):
