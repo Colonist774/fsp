@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+from pathlib import Path
+from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -48,7 +51,12 @@ from app.schemas import (
 )
 
 
+UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
+ANNOUNCEMENT_UPLOADS_DIR = UPLOADS_DIR / "announcements"
+ANNOUNCEMENT_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
 app = FastAPI()
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
@@ -600,6 +608,100 @@ def update_profile(
     return build_user_me(current_user, db)
 
 
+ALLOWED_ANNOUNCEMENT_IMAGES = {
+    "image/jpeg": ("jpg", b"\xff\xd8\xff"),
+    "image/png": ("png", b"\x89PNG\r\n\x1a\n"),
+    "image/gif": ("gif", (b"GIF87a", b"GIF89a")),
+    "image/webp": ("webp", b"RIFF"),
+}
+MAX_ANNOUNCEMENT_IMAGE_SIZE = 8 * 1024 * 1024
+
+
+def is_valid_announcement_image(
+    content_type: str,
+    data: bytes,
+) -> bool:
+    image_config = ALLOWED_ANNOUNCEMENT_IMAGES.get(content_type)
+
+    if image_config is None:
+        return False
+
+    _, signature = image_config
+
+    if content_type == "image/gif":
+        return any(data.startswith(item) for item in signature)
+
+    if content_type == "image/webp":
+        return (
+            data.startswith(signature)
+            and len(data) >= 12
+            and data[8:12] == b"WEBP"
+        )
+
+    return data.startswith(signature)
+
+
+def delete_announcement_image(image_url: str | None) -> None:
+    if not image_url or not image_url.startswith(
+        "/uploads/announcements/"
+    ):
+        return
+
+    image_path = ANNOUNCEMENT_UPLOADS_DIR / Path(image_url).name
+
+    if image_path.exists():
+        image_path.unlink()
+
+
+@app.post("/api/announcements/upload-image")
+async def upload_announcement_image(
+    request: Request,
+    current_user: User = Depends(require_organizer),
+):
+    content_type = (
+        request.headers.get("content-type", "")
+        .split(";", 1)[0]
+        .strip()
+        .lower()
+    )
+    image_config = ALLOWED_ANNOUNCEMENT_IMAGES.get(content_type)
+
+    if image_config is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Поддерживаются JPEG, PNG, WEBP и GIF",
+        )
+
+    data = await request.body()
+
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Файл изображения пуст",
+        )
+
+    if len(data) > MAX_ANNOUNCEMENT_IMAGE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Изображение должно быть не больше 8 МБ",
+        )
+
+    if not is_valid_announcement_image(content_type, data):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Некорректный файл изображения",
+        )
+
+    extension, _ = image_config
+    filename = f"{uuid4().hex}.{extension}"
+    image_path = ANNOUNCEMENT_UPLOADS_DIR / filename
+    image_path.write_bytes(data)
+
+    return {
+        "image_url": f"/uploads/announcements/{filename}",
+    }
+
+
 @app.get("/api/announcements", response_model=list[AnnouncementRead])
 def get_announcements(
     db: Session = Depends(get_db),
@@ -715,12 +817,17 @@ def update_announcement(
             detail="Введите текст анонса",
         )
 
+    previous_image_url = announcement.image_url
+
     announcement.title = title
     announcement.content = content
     announcement.image_url = image_url
 
     db.commit()
     db.refresh(announcement)
+
+    if previous_image_url != image_url:
+        delete_announcement_image(previous_image_url)
 
     return announcement
 
@@ -742,8 +849,12 @@ def delete_announcement(
             detail="Анонс не найден",
         )
 
+    image_url = announcement.image_url
+
     db.delete(announcement)
     db.commit()
+
+    delete_announcement_image(image_url)
 
 
 def get_solved_task_ids(
