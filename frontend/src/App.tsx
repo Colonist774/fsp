@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import SolvePage from "./pages/SolvePage";
 import ContestsPage from "./pages/ContestsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AnnouncementPage from "./pages/AnnouncementPage";
+import AnnouncementFormPage from "./pages/AnnouncementFormPage";
 import TaskPage from "./pages/TaskPage";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
@@ -104,6 +106,15 @@ export default function App() {
         element={<CompetitionFormPage />}
       />
       <Route path="/announcements" element={<AnnouncementsPage />} />
+      <Route path="/announcements/:id" element={<AnnouncementPage />} />
+      <Route
+        path="/organizer/announcements/new"
+        element={<AnnouncementFormPage />}
+      />
+      <Route
+        path="/organizer/announcements/:id/edit"
+        element={<AnnouncementFormPage />}
+      />
       <Route path="/tasks/:id" element={<TaskPage />} />
       <Route path="/profile/edit" element={<EditProfilePage />} />
       <Route path="/profile/stats" element={<StatisticsPage />} />
