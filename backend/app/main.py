@@ -1326,6 +1326,11 @@ def get_platform_competition_standings(
     db: Session,
     competition_id: int,
 ) -> dict[int, tuple[int, int | None]]:
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        return {}
+
     registrations = db.scalars(
         select(CompetitionRegistration).where(
             CompetitionRegistration.competition_id == competition_id
@@ -1364,6 +1369,7 @@ def get_platform_competition_standings(
                 Submission.status == "accepted",
                 Submission.user_id.in_(user_ids),
                 Submission.task_id.in_(list(points_by_task)),
+                Submission.created_at <= competition.end_at,
             )
             .distinct()
         ).all()
@@ -1400,6 +1406,30 @@ def get_platform_competition_standings(
     }
 
 
+def has_unfinished_competition_submissions(
+    db: Session,
+    competition: Competition,
+) -> bool:
+    registered_user_ids = select(
+        CompetitionRegistration.user_id
+    ).where(
+        CompetitionRegistration.competition_id == competition.id
+    )
+
+    submission_id = db.scalar(
+        select(Submission.id)
+        .where(
+            Submission.competition_id == competition.id,
+            Submission.user_id.in_(registered_user_ids),
+            Submission.created_at <= competition.end_at,
+            Submission.status.in_(("pending", "running")),
+        )
+        .limit(1)
+    )
+
+    return submission_id is not None
+
+
 def sync_platform_competition_results(
     db: Session,
     competition: Competition,
@@ -1413,6 +1443,13 @@ def sync_platform_competition_results(
         competition.conduct_mode != "platform"
         or get_competition_status(competition) != "past"
     ):
+        return standings
+
+    if has_unfinished_competition_submissions(
+        db,
+        competition,
+    ):
+        competition.results_finalized_at = None
         return standings
 
     existing_results = {
@@ -2465,6 +2502,7 @@ def create_submission(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    submitted_at = datetime.now(timezone.utc)
     cleanup_expired_competition_submissions(db)
 
     task = db.get(Task, submission_data.task_id)
@@ -2488,7 +2526,10 @@ def create_submission(
             )
 
         if current_user.role != "organizer":
-            if get_competition_status(competition) != "active":
+            if get_competition_status(
+                competition,
+                submitted_at,
+            ) != "active":
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Отправлять решения можно только во время соревнования",
@@ -2538,10 +2579,40 @@ def create_submission(
         code=submission_data.code,
         language=submission_data.language,
         status="pending",
+        created_at=submitted_at,
     )
 
     db.add(submission)
     db.commit()
     db.refresh(submission)
 
-    return judge_submission(db, submission)
+    judged_submission = judge_submission(
+        db,
+        submission,
+    )
+
+    if (
+        submission_data.competition_id is not None
+        and current_user.role == "participant"
+    ):
+        competition = db.scalar(
+            select(Competition)
+            .where(
+                Competition.id == submission_data.competition_id
+            )
+            .with_for_update()
+        )
+
+        if (
+            competition is not None
+            and competition.conduct_mode == "platform"
+            and get_competition_status(competition) == "past"
+        ):
+            sync_platform_competition_results(
+                db,
+                competition,
+            )
+            db.commit()
+            db.refresh(judged_submission)
+
+    return judged_submission
