@@ -14,6 +14,7 @@ import RatingPage from "./pages/RatingPage";
 import CompetitionPage from "./pages/CompetitionPage";
 import CompetitionFormPage from "./pages/CompetitionFormPage";
 import AthletePage from "./pages/AthletePage";
+import OrganizerAccessPage from "./pages/OrganizerAccessPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -96,6 +97,10 @@ export default function App() {
       <Route path="/solve" element={<SolvePage />} />
       <Route path="/rating" element={<RatingPage />} />
       <Route path="/athletes/:id" element={<AthletePage />} />
+      <Route
+        path="/organizer/access"
+        element={<OrganizerAccessPage />}
+      />
       <Route path="/contests/:id" element={<CompetitionPage />} />
       <Route
         path="/organizer/competitions/new"
