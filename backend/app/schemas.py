@@ -97,20 +97,50 @@ class AnnouncementRead(AnnouncementBase):
     updated_at: datetime
 
 
-class TaskRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class TaskExampleData(BaseModel):
+    input_data: str = Field(max_length=20000)
+    expected_output: str = Field(max_length=20000)
 
+
+class TaskTestData(BaseModel):
+    input_data: str = Field(max_length=20000)
+    expected_output: str = Field(max_length=20000)
+
+
+class TaskBase(BaseModel):
+    title: str = Field(min_length=3, max_length=200)
+    difficulty: int = Field(ge=1, le=5)
+    description: str = Field(min_length=1, max_length=20000)
+    input: str = Field(default="", max_length=10000)
+    output: str = Field(default="", max_length=10000)
+    constraints: str = Field(default="", max_length=10000)
+
+
+class TaskOrganizerCreate(TaskBase):
+    examples: list[TaskExampleData] = Field(min_length=1, max_length=10)
+    tests: list[TaskTestData] = Field(min_length=1, max_length=100)
+
+
+class TaskRead(TaskBase):
     id: int
+    solved: bool = False
+    examples: list[TaskExampleData] = Field(default_factory=list)
+
+
+class TaskOrganizerRead(TaskRead):
+    tests: list[TaskTestData] = Field(default_factory=list)
+
+
+class CompetitionTaskRead(BaseModel):
+    task_id: int
+    position: int
     title: str
     difficulty: int
-    solved: bool = False
-    description: str
-    input: str
-    output: str
 
 
 class SubmissionCreate(BaseModel):
     task_id: int
+    competition_id: int | None = None
     code: str
     language: Language
 
@@ -120,6 +150,7 @@ class SubmissionRead(BaseModel):
 
     id: int
     task_id: int
+    competition_id: int | None
     user_id: int | None
     code: str
     language: Language
