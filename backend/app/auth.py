@@ -1,7 +1,9 @@
 import os
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import jwt
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError
@@ -12,7 +14,20 @@ from app.database import get_db
 from app.models import User
 
 
-JWT_SECRET = os.getenv("JWT_SECRET", "fsp-dev-secret-change-me")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+
+if not JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET is required. Set it in backend/.env or the environment."
+    )
+
+if len(JWT_SECRET) < 32:
+    raise RuntimeError(
+        "JWT_SECRET must contain at least 32 characters."
+    )
+
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_TTL_HOURS = 24
 
