@@ -195,7 +195,6 @@ class CompetitionResultSummary(BaseModel):
 
 class UserStatistics(BaseModel):
     rating: int
-    qualification_points: int
     rank: int | None
     competitions: int
     wins: int
@@ -232,7 +231,6 @@ class AthleteProfileRead(BaseModel):
     education_org: str | None
     sports_disciplines: str | None
     sports_qualification: SportsQualification | None
-    qualification_points: int
     bio: str | None
     team_status: TeamStatus
     team_name: str | None
