@@ -189,6 +189,19 @@ export default function CompetitionFormPage() {
       <>
         <Navbar />
         <main className="page competition-form-page">
+          <button
+            className="page-back"
+            type="button"
+            onClick={() =>
+              navigate(
+                isEditing && id
+                  ? `/contests/${id}`
+                  : "/",
+              )
+            }
+          >
+            {isEditing ? "← К соревнованию" : "← К соревнованиям"}
+          </button>
           <div className="auth-error">Недостаточно прав</div>
         </main>
       </>
@@ -200,6 +213,19 @@ export default function CompetitionFormPage() {
       <Navbar />
 
       <main className="page competition-form-page">
+        <button
+          className="page-back"
+          type="button"
+          onClick={() =>
+            navigate(
+              isEditing && id
+                ? `/contests/${id}`
+                : "/",
+            )
+          }
+        >
+          {isEditing ? "← К соревнованию" : "← К соревнованиям"}
+        </button>
         <h1>
           {isEditing
             ? "Редактировать соревнование"
