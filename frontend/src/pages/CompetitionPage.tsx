@@ -15,12 +15,14 @@ type CompetitionParticipant = {
   team_name: string | null;
   registered_at: string;
   finished_at: string | null;
+  score: number | null;
   place: number | null;
 };
 
 type CompetitionResult = {
   user_id: number;
   username: string;
+  score: number | null;
   place: number | null;
   rating_points: number;
 };
@@ -30,6 +32,7 @@ type CompetitionTask = {
   position: number;
   title: string;
   difficulty: number;
+  points: number;
 };
 
 const levelLabels = {
@@ -557,8 +560,7 @@ export default function CompetitionPage() {
                         </span>
                         <strong>{task.title}</strong>
                         <span className="competition-task-difficulty">
-                          {"★".repeat(task.difficulty)}
-                          {"☆".repeat(5 - task.difficulty)}
+                          {task.points} баллов
                         </span>
                       </Link>
 
@@ -597,11 +599,22 @@ export default function CompetitionPage() {
           <section className="competition-results-section">
             <h2>Результаты</h2>
 
-            <div className="competition-results-table">
+            <div
+              className={
+                competition.conduct_mode === "platform"
+                  ? "competition-results-table is-platform"
+                  : "competition-results-table"
+              }
+            >
               <div className="competition-results-header">
                 <span>Место</span>
                 <span>Участник</span>
-                <span className="competition-rating-points-exampl">Рейтинг</span>
+                {competition.conduct_mode === "platform" && (
+                  <span>Баллы</span>
+                )}
+                <span className="competition-rating-points-exampl">
+                  Рейтинг
+                </span>
               </div>
 
               {results.map((result) => (
@@ -616,6 +629,11 @@ export default function CompetitionPage() {
                   >
                     {result.username}
                   </Link>
+                  {competition.conduct_mode === "platform" && (
+                    <strong className="competition-score">
+                      {result.score ?? 0}
+                    </strong>
+                  )}
                   <span className="competition-rating-points">
                     +{result.rating_points}
                   </span>
@@ -637,14 +655,29 @@ export default function CompetitionPage() {
                 Пока никто не зарегистрировался
               </p>
             ) : (
-              <div className="competition-participants-table">
+              <div
+                className={
+                  competition.conduct_mode === "platform"
+                    ? "competition-participants-table is-platform"
+                    : "competition-participants-table"
+                }
+              >
                 <div className="competition-participants-header">
                   <span>Участник</span>
                   <span>Команда</span>
                   <span>Email</span>
                   <span>Регистрация</span>
-                  <span>Место</span>
-                  <span></span>
+                  {competition.conduct_mode === "platform" ? (
+                    <>
+                      <span>Баллы</span>
+                      <span>Место</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Место</span>
+                      <span></span>
+                    </>
+                  )}
                 </div>
 
                 {participants.map((participant) => (
@@ -664,43 +697,66 @@ export default function CompetitionPage() {
                     <span>{participant.email || "—"}</span>
                     <span>{formatDateTime(participant.registered_at)}</span>
 
-                    <input
-                      className="competition-result-place"
-                      type="number"
-                      min={1}
-                      value={participant.place ?? ""}
-                      disabled={competition.status !== "past"}
-                      onChange={(event) =>
-                        updateParticipant(participant.user_id, {
-                          place: event.target.value
-                            ? Number(event.target.value)
-                            : null,
-                        })
-                      }
-                    />
+                    {competition.conduct_mode === "platform" ? (
+                      <>
+                        <strong className="competition-score">
+                          {participant.score ?? 0}
+                        </strong>
+                        <strong className="competition-place">
+                          {participant.place ?? "—"}
+                        </strong>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          className="competition-result-place"
+                          type="number"
+                          min={1}
+                          value={participant.place ?? ""}
+                          disabled={competition.status !== "past"}
+                          onChange={(event) =>
+                            updateParticipant(participant.user_id, {
+                              place: event.target.value
+                                ? Number(event.target.value)
+                                : null,
+                            })
+                          }
+                        />
 
-                    <button
-                      type="button"
-                      disabled={
-                        competition.status !== "past" ||
-                        savingUserId === participant.user_id
-                      }
-                      onClick={() => saveResult(participant)}
-                    >
-                      {savingUserId === participant.user_id
-                        ? "..."
-                        : "Сохранить"}
-                    </button>
+                        <button
+                          type="button"
+                          disabled={
+                            competition.status !== "past" ||
+                            savingUserId === participant.user_id
+                          }
+                          onClick={() => saveResult(participant)}
+                        >
+                          {savingUserId === participant.user_id
+                            ? "..."
+                            : "Сохранить"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {competition.status !== "past" && participants.length > 0 && (
-              <p className="competition-results-note">
-                Внести результаты можно после завершения соревнования.
-              </p>
-            )}
+            {competition.conduct_mode === "platform" &&
+              participants.length > 0 && (
+                <p className="competition-results-note">
+                  Баллы и места рассчитываются автоматически по принятым
+                  решениям.
+                </p>
+              )}
+
+            {competition.conduct_mode !== "platform" &&
+              competition.status !== "past" &&
+              participants.length > 0 && (
+                <p className="competition-results-note">
+                  Внести результаты можно после завершения соревнования.
+                </p>
+              )}
           </section>
         )}
       </main>
