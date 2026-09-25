@@ -2,12 +2,32 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
+const API_ORIGIN = "http://127.0.0.1:8000";
+const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+
 type Announcement = {
   id: number;
   title: string;
   content: string;
   image_url: string | null;
 };
+
+type UploadResponse = {
+  image_url?: string;
+  detail?: string;
+};
+
+function resolveImageUrl(imageUrl: string) {
+  return imageUrl.startsWith("/")
+    ? `${API_ORIGIN}${imageUrl}`
+    : imageUrl;
+}
 
 export default function AnnouncementFormPage() {
   const { id } = useParams();
@@ -17,6 +37,8 @@ export default function AnnouncementFormPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,7 +56,7 @@ export default function AnnouncementFormPage() {
 
       try {
         const meResponse = await fetch(
-          "http://127.0.0.1:8000/api/me",
+          `${API_ORIGIN}/api/me`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -61,7 +83,7 @@ export default function AnnouncementFormPage() {
         }
 
         const response = await fetch(
-          `http://127.0.0.1:8000/api/announcements/${id}`,
+          `${API_ORIGIN}/api/announcements/${id}`,
         );
 
         if (!response.ok) {
@@ -73,6 +95,11 @@ export default function AnnouncementFormPage() {
         setTitle(announcement.title);
         setContent(announcement.content);
         setImageUrl(announcement.image_url ?? "");
+        setImagePreview(
+          announcement.image_url
+            ? resolveImageUrl(announcement.image_url)
+            : null,
+        );
       } catch {
         setError("Не удалось подключиться к серверу");
       } finally {
@@ -82,6 +109,74 @@ export default function AnnouncementFormPage() {
 
     loadPage();
   }, [id, isEditing]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  function handleImageChange(file: File | undefined) {
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setError("Поддерживаются JPEG, PNG, WEBP и GIF");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError("Изображение должно быть не больше 8 МБ");
+      return;
+    }
+
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setError(null);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function removeImage() {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageFile(null);
+    setImageUrl("");
+    setImagePreview(null);
+  }
+
+  async function uploadImage(file: File, token: string) {
+    const response = await fetch(
+      `${API_ORIGIN}/api/announcements/upload-image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": file.type,
+        },
+        body: file,
+      },
+    );
+
+    const data: UploadResponse = await response.json();
+
+    if (!response.ok || !data.image_url) {
+      throw new Error(
+        typeof data.detail === "string"
+          ? data.detail
+          : "Не удалось загрузить изображение",
+      );
+    }
+
+    return data.image_url;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -97,10 +192,16 @@ export default function AnnouncementFormPage() {
     setIsSaving(true);
 
     try {
+      let nextImageUrl = imageUrl;
+
+      if (imageFile) {
+        nextImageUrl = await uploadImage(imageFile, token);
+      }
+
       const response = await fetch(
         isEditing
-          ? `http://127.0.0.1:8000/api/announcements/${id}`
-          : "http://127.0.0.1:8000/api/announcements",
+          ? `${API_ORIGIN}/api/announcements/${id}`
+          : `${API_ORIGIN}/api/announcements`,
         {
           method: isEditing ? "PATCH" : "POST",
           headers: {
@@ -110,7 +211,7 @@ export default function AnnouncementFormPage() {
           body: JSON.stringify({
             title: title.trim(),
             content: content.trim(),
-            image_url: imageUrl.trim() || null,
+            image_url: nextImageUrl || null,
           }),
         },
       );
@@ -127,8 +228,12 @@ export default function AnnouncementFormPage() {
       }
 
       navigate(`/announcements/${data.id}`);
-    } catch {
-      setError("Не удалось подключиться к серверу");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Не удалось подключиться к серверу",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -175,14 +280,31 @@ export default function AnnouncementFormPage() {
             <label>
               <span>Изображение</span>
               <input
-                type="url"
-                value={imageUrl}
-                maxLength={1000}
-                placeholder="Ссылка на изображение"
+                className="announcement-file-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 disabled={isSaving}
-                onChange={(event) => setImageUrl(event.target.value)}
+                onChange={(event) =>
+                  handleImageChange(event.target.files?.[0])
+                }
               />
+              <small className="announcement-image-help">
+                JPEG, PNG, WEBP или GIF, до 8 МБ
+              </small>
             </label>
+
+            {imagePreview && (
+              <div className="announcement-image-preview">
+                <img src={imagePreview} alt="" />
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={removeImage}
+                >
+                  Убрать изображение
+                </button>
+              </div>
+            )}
 
             <label>
               <span>Текст</span>
