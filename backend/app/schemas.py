@@ -266,7 +266,7 @@ class AthleteProfileRead(BaseModel):
     team_status: TeamStatus
     team_name: str | None
     rating: int
-    rank: int
+    rank: int | None
     competitions: int
     wins: int
     podiums: int
