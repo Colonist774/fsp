@@ -213,7 +213,7 @@ export default function EditProfilePage() {
               onChange={(event) => setHideFullName(event.target.checked)}
               disabled={isLoading || isSaving}
             />
-            <span>Скрыть ФИО от других участников</span>
+            <span>Скрыть ФИО от других участников (администрация ФСП все равно видит ваше ФИО)</span>
           </label>
 
           <label>
@@ -234,7 +234,7 @@ export default function EditProfilePage() {
               onChange={(event) => setHideLocality(event.target.checked)}
               disabled={isLoading || isSaving}
             />
-            <span>Скрыть населённый пункт от других участников</span>
+            <span>Скрыть населённый пункт от других участников (администрация ФСП все равно видит ваш населенный пункт)</span>
           </label>
 
           <label>
