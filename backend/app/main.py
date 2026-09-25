@@ -378,9 +378,17 @@ def get_my_statistics(
         None,
     )
 
+    now = datetime.now(timezone.utc)
+
     competitions_count = db.scalar(
-        select(func.count(CompetitionResult.id)).where(
-            CompetitionResult.user_id == current_user.id
+        select(func.count(CompetitionRegistration.id))
+        .join(
+            Competition,
+            Competition.id == CompetitionRegistration.competition_id,
+        )
+        .where(
+            CompetitionRegistration.user_id == current_user.id,
+            Competition.start_at <= now,
         )
     ) or 0
 
@@ -398,6 +406,27 @@ def get_my_statistics(
             CompetitionResult.place <= 3,
         )
     ) or 0
+
+    competition_rows = db.execute(
+        select(
+            CompetitionRegistration,
+            Competition,
+            CompetitionResult,
+        )
+        .join(
+            Competition,
+            Competition.id == CompetitionRegistration.competition_id,
+        )
+        .outerjoin(
+            CompetitionResult,
+            (CompetitionResult.competition_id == Competition.id)
+            & (CompetitionResult.user_id == current_user.id),
+        )
+        .where(
+            CompetitionRegistration.user_id == current_user.id
+        )
+        .order_by(Competition.start_at.desc())
+    ).all()
 
     recent_rows = db.execute(
         select(
@@ -422,6 +451,25 @@ def get_my_statistics(
         competitions=competitions_count,
         wins=wins_count,
         podiums=podiums_count,
+        my_competitions=[
+            {
+                "competition_id": competition.id,
+                "title": competition.title,
+                "discipline": competition.discipline,
+                "format": competition.format,
+                "conduct_mode": competition.conduct_mode,
+                "status": get_competition_status(
+                    competition,
+                    now,
+                ),
+                "start_at": competition.start_at,
+                "end_at": competition.end_at,
+                "registered_at": registration.registered_at,
+                "finished_at": registration.finished_at,
+                "place": result.place if result is not None else None,
+            }
+            for registration, competition, result in competition_rows
+        ],
         recent_results=[
             {
                 "title": title,
@@ -503,6 +551,18 @@ def get_athlete_profile(
         .order_by(Competition.end_at.desc())
     ).all()
 
+    started_competitions_count = db.scalar(
+        select(func.count(CompetitionRegistration.id))
+        .join(
+            Competition,
+            Competition.id == CompetitionRegistration.competition_id,
+        )
+        .where(
+            CompetitionRegistration.user_id == athlete.id,
+            Competition.start_at <= datetime.now(timezone.utc),
+        )
+    ) or 0
+
     wins = sum(
         1
         for _, _, _, _, place in result_rows
@@ -535,7 +595,7 @@ def get_athlete_profile(
         team_name=athlete.team_name,
         rating=athlete.rating,
         rank=rank,
-        competitions=len(result_rows),
+        competitions=started_competitions_count,
         wins=wins,
         podiums=podiums,
         results=[
