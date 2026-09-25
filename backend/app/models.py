@@ -52,6 +52,10 @@ class User(Base):
         server_default="participant",
         nullable=False,
     )
+    organizer_probation_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     rating: Mapped[int] = mapped_column(
         Integer,
         default=0,
