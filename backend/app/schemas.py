@@ -211,6 +211,7 @@ class AthleteQualificationRead(BaseModel):
     sports_qualification: SportsQualification | None
     qualification_points: int
     rating: int
+    rank: int
 
 
 class AthleteResultRead(BaseModel):
