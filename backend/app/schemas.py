@@ -207,6 +207,12 @@ class AthleteQualificationUpdate(BaseModel):
     sports_qualification: SportsQualification | None = None
 
 
+class AthleteQualificationRead(BaseModel):
+    sports_qualification: SportsQualification | None
+    qualification_points: int
+    rating: int
+
+
 class AthleteResultRead(BaseModel):
     competition_id: int
     title: str
