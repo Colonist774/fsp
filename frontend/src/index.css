@@ -3128,3 +3128,47 @@ nav a[aria-current="page"]::after {
     width: 100%;
   }
 }
+
+
+.competition-results-table.is-platform
+  .competition-results-header,
+.competition-results-table.is-platform
+  .competition-results-row {
+  grid-template-columns: 90px minmax(0, 1fr) 90px 110px;
+}
+
+.competition-participants-table.is-platform
+  .competition-participants-header,
+.competition-participants-table.is-platform
+  .competition-participant-row {
+  grid-template-columns:
+    minmax(140px, 1.1fr)
+    minmax(110px, 0.8fr)
+    minmax(190px, 1.25fr)
+    150px
+    80px
+    70px;
+}
+
+.competition-score,
+.competition-place {
+  justify-self: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.competition-score {
+  color: var(--text);
+}
+
+.competition-place {
+  color: var(--text);
+}
+
+@media (max-width: 700px) {
+  .competition-results-table.is-platform
+    .competition-results-header,
+  .competition-results-table.is-platform
+    .competition-results-row {
+    min-width: 520px;
+  }
+}
