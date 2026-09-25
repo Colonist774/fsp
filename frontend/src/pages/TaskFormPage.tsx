@@ -235,6 +235,14 @@ export default function TaskFormPage() {
       <>
         <Navbar />
         <main className="page task-form-page">
+          <button
+            className="page-back"
+            type="button"
+            onClick={() => navigate(`/contests/${competitionId}`)}
+          >
+            ← К соревнованию
+          </button>
+
           <div className="auth-error">Недостаточно прав</div>
         </main>
       </>
