@@ -6,3 +6,4 @@ alembic
 pydantic
 PyJWT
 pwdlib[argon2]
+python-dotenv
