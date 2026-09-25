@@ -1838,6 +1838,63 @@ def get_competition_task(
     )
 
 
+@app.get(
+    "/api/competitions/{competition_id}/tasks/{task_id}/latest-submission",
+    response_model=CompetitionSubmissionDraftRead | None,
+)
+def get_latest_competition_submission(
+    competition_id: int,
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    cleanup_expired_competition_submissions(db)
+
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    require_competition_task_access(
+        competition,
+        current_user,
+        db,
+    )
+
+    if get_competition_task_link(db, competition_id, task_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Задача не найдена в этом соревновании",
+        )
+
+    submission = db.scalar(
+        select(Submission)
+        .where(
+            Submission.competition_id == competition_id,
+            Submission.task_id == task_id,
+            Submission.user_id == current_user.id,
+        )
+        .order_by(
+            Submission.created_at.desc(),
+            Submission.id.desc(),
+        )
+        .limit(1)
+    )
+
+    if submission is None:
+        return None
+
+    return CompetitionSubmissionDraftRead(
+        code=submission.code,
+        language=submission.language,
+        status=submission.status,
+        created_at=submission.created_at,
+    )
+
+
 @app.post(
     "/api/organizer/competitions/{competition_id}/tasks",
     response_model=TaskOrganizerRead,
