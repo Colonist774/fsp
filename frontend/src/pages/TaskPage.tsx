@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import type { Task } from "../types/task";
+import type { Contest } from "../types/contest";
 import Navbar from "../components/Navbar";
 import Editor from "@monaco-editor/react";
 
@@ -16,6 +17,24 @@ type SubmissionStatus =
   | "runner_error"
   | "no_tests";
 
+type CompetitionTask = {
+  task_id: number;
+  position: number;
+  title: string;
+  difficulty: number;
+};
+
+type CurrentUser = {
+  role: "participant" | "organizer";
+};
+
+type SavedSubmission = {
+  code: string;
+  language: Language;
+  status: SubmissionStatus;
+  created_at: string;
+};
+
 const statusLabels: Record<SubmissionStatus, string> = {
   accepted: "Успешно",
   wrong_answer: "Неверный ответ",
@@ -29,32 +48,42 @@ const statusLabels: Record<SubmissionStatus, string> = {
 
 export default function TaskPage() {
   const { id, competitionId } = useParams();
+  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [task, setTask] = useState<Task | null>(null);
+  const [competition, setCompetition] = useState<Contest | null>(null);
+  const [competitionTasks, setCompetitionTasks] = useState<CompetitionTask[]>([]);
+  const [role, setRole] = useState<CurrentUser["role"]>("participant");
   const [language, setLanguage] = useState<Language>("python");
   const [submissionStatus, setSubmissionStatus] =
     useState<SubmissionStatus | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadTask() {
       const token = localStorage.getItem("token");
+      const headers = token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined;
+
+      setIsLoading(true);
+      setError(null);
+      setTask(null);
+      setCode("");
+      setSubmissionStatus(null);
 
       try {
         const endpoint = competitionId
           ? `http://127.0.0.1:8000/api/competitions/${competitionId}/tasks/${id}`
           : `http://127.0.0.1:8000/api/tasks/${id}`;
 
-        const response = await fetch(endpoint, {
-          headers: token
-            ? { Authorization: `Bearer ${token}` }
-            : undefined,
-        });
+        const taskResponse = await fetch(endpoint, { headers });
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => null);
+        if (!taskResponse.ok) {
+          const data = await taskResponse.json().catch(() => null);
           setError(
             typeof data?.detail === "string"
               ? data.detail
@@ -63,8 +92,61 @@ export default function TaskPage() {
           return;
         }
 
-        const taskData: Task = await response.json();
+        const taskData: Task = await taskResponse.json();
         setTask(taskData);
+
+        if (!competitionId || !token) {
+          return;
+        }
+
+        const [
+          competitionResponse,
+          tasksResponse,
+          savedResponse,
+          meResponse,
+        ] = await Promise.all([
+          fetch(
+            `http://127.0.0.1:8000/api/competitions/${competitionId}`,
+            { headers },
+          ),
+          fetch(
+            `http://127.0.0.1:8000/api/competitions/${competitionId}/tasks`,
+            { headers },
+          ),
+          fetch(
+            `http://127.0.0.1:8000/api/competitions/${competitionId}/tasks/${id}/latest-submission`,
+            { headers },
+          ),
+          fetch("http://127.0.0.1:8000/api/me", { headers }),
+        ]);
+
+        if (competitionResponse.ok) {
+          const competitionData: Contest =
+            await competitionResponse.json();
+          setCompetition(competitionData);
+        }
+
+        if (tasksResponse.ok) {
+          const tasksData: CompetitionTask[] =
+            await tasksResponse.json();
+          setCompetitionTasks(tasksData);
+        }
+
+        if (meResponse.ok) {
+          const me: CurrentUser = await meResponse.json();
+          setRole(me.role);
+        }
+
+        if (savedResponse.ok) {
+          const saved: SavedSubmission | null =
+            await savedResponse.json();
+
+          if (saved) {
+            setCode(saved.code);
+            setLanguage(saved.language);
+            setSubmissionStatus(saved.status);
+          }
+        }
       } catch {
         setError("Не удалось подключиться к серверу");
       } finally {
@@ -126,6 +208,59 @@ export default function TaskPage() {
     }
   }
 
+  async function finishParticipation() {
+    if (!competitionId || role !== "participant") {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Завершить участие в соревновании? После этого отправлять новые решения будет нельзя.",
+      )
+    ) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
+    setIsFinishing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${competitionId}/finish`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось завершить участие",
+        );
+        return;
+      }
+
+      setCompetition(data);
+      navigate(`/contests/${competitionId}`);
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsFinishing(false);
+    }
+  }
+
   if (isLoading) {
     return null;
   }
@@ -150,12 +285,32 @@ export default function TaskPage() {
       <main className="task-workspace">
         <section className="task-statement">
           {competitionId && (
-            <Link
-              className="task-contest-back"
-              to={`/contests/${competitionId}`}
-            >
-              ← К соревнованию
-            </Link>
+            <>
+              <Link
+                className="task-contest-back"
+                to={`/contests/${competitionId}`}
+              >
+                ← К соревнованию
+              </Link>
+
+              {competitionTasks.length > 0 && (
+                <div className="task-contest-tabs">
+                  {competitionTasks.map((competitionTask) => (
+                    <Link
+                      className={
+                        competitionTask.task_id === task.id
+                          ? "is-active"
+                          : undefined
+                      }
+                      to={`/contests/${competitionId}/tasks/${competitionTask.task_id}`}
+                      key={competitionTask.task_id}
+                    >
+                      {competitionTask.position}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           <h1>{task.title}</h1>
@@ -221,6 +376,7 @@ export default function TaskPage() {
               onChange={(event) =>
                 setLanguage(event.target.value as Language)
               }
+              disabled={competition?.participation_finished}
             >
               <option value="python">Python</option>
               <option value="javascript">JavaScript</option>
@@ -228,13 +384,37 @@ export default function TaskPage() {
               <option value="java">Java</option>
             </select>
 
-            <button
-              className="task-submit"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !code.trim()}
-            >
-              {isSubmitting ? "Проверка..." : "Отправить"}
-            </button>
+            <div className="task-editor-primary-actions">
+              {competitionId &&
+                role === "participant" &&
+                competition?.status === "active" &&
+                !competition.participation_finished && (
+                  <button
+                    className="task-finish"
+                    type="button"
+                    disabled={isFinishing || isSubmitting}
+                    onClick={finishParticipation}
+                  >
+                    {isFinishing ? "Завершение..." : "Завершить"}
+                  </button>
+                )}
+
+              <button
+                className="task-submit"
+                onClick={handleSubmit}
+                disabled={
+                  isSubmitting ||
+                  !code.trim() ||
+                  competition?.participation_finished
+                }
+              >
+                {competition?.participation_finished
+                  ? "Участие завершено"
+                  : isSubmitting
+                    ? "Проверка..."
+                    : "Отправить"}
+              </button>
+            </div>
           </div>
 
           <div className="code-editor-shell">
@@ -271,6 +451,9 @@ export default function TaskPage() {
               }}
               theme="fsp-dark"
               options={{
+                readOnly: Boolean(
+                  competition?.participation_finished,
+                ),
                 minimap: { enabled: false },
                 fontSize: 14,
                 fontFamily:
