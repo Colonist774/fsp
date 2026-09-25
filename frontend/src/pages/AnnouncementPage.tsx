@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 
+const API_ORIGIN = "http://127.0.0.1:8000";
+
+function resolveImageUrl(imageUrl: string) {
+  return imageUrl.startsWith("/")
+    ? `${API_ORIGIN}${imageUrl}`
+    : imageUrl;
+}
+
 type Announcement = {
   id: number;
   title: string;
@@ -159,7 +167,7 @@ export default function AnnouncementPage() {
             {announcement.image_url && (
               <img
                 className="announcement-hero"
-                src={announcement.image_url}
+                src={resolveImageUrl(announcement.image_url)}
                 alt=""
               />
             )}
