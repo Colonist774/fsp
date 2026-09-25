@@ -14,6 +14,7 @@ type CompetitionParticipant = {
   team_status: "member" | "looking" | "solo";
   team_name: string | null;
   registered_at: string;
+  finished_at: string | null;
   place: number | null;
 };
 
@@ -488,7 +489,11 @@ export default function CompetitionPage() {
             <button
               className="competition-primary-action"
               type="button"
-              disabled={!competition.is_registered || tasks.length === 0}
+              disabled={
+                !competition.is_registered ||
+                competition.participation_finished ||
+                tasks.length === 0
+              }
               onClick={() => {
                 if (tasks.length > 0) {
                   navigate(
@@ -499,9 +504,11 @@ export default function CompetitionPage() {
             >
               {!competition.is_registered
                 ? "Вы не зарегистрированы"
-                : tasks.length === 0
-                  ? "Задачи пока не добавлены"
-                  : "Начать"}
+                : competition.participation_finished
+                  ? "Участие завершено"
+                  : tasks.length === 0
+                    ? "Задачи пока не добавлены"
+                    : "Начать"}
             </button>
           )}
 
