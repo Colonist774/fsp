@@ -263,6 +263,7 @@ export default function AthletePage() {
               sports_qualification: data.sports_qualification,
               qualification_points: data.qualification_points,
               rating: data.rating,
+              rank: data.rank,
             }
           : current,
       );
