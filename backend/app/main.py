@@ -2122,6 +2122,8 @@ def create_submission(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
+    cleanup_expired_competition_submissions(db)
+
     task = db.get(Task, submission_data.task_id)
 
     if task is None:
@@ -2160,6 +2162,22 @@ def create_submission(
                 current_user,
                 db,
             )
+
+            registration = db.scalar(
+                select(CompetitionRegistration).where(
+                    CompetitionRegistration.competition_id == competition.id,
+                    CompetitionRegistration.user_id == current_user.id,
+                )
+            )
+
+            if (
+                registration is not None
+                and registration.finished_at is not None
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Вы уже завершили участие в соревновании",
+                )
 
         if get_competition_task_link(
             db,
