@@ -181,6 +181,9 @@ def build_user_me(
         bio=user.bio,
         full_name=user.full_name,
         hide_full_name=user.hide_full_name,
+        locality=user.locality,
+        hide_locality=user.hide_locality,
+        education_org=user.education_org,
         sports_disciplines=user.sports_disciplines,
         sports_qualification=user.sports_qualification,
         team_status=user.team_status,
@@ -475,11 +478,20 @@ def get_athlete_profile(
         if place <= 3
     )
 
+    locality_visible = (
+        not athlete.hide_locality
+        or current_user.role == "organizer"
+        or current_user.id == athlete.id
+    )
+
     return AthleteProfileRead(
         id=athlete.id,
         username=athlete.username,
         full_name=athlete.full_name,
         hide_full_name=athlete.hide_full_name,
+        locality=athlete.locality if locality_visible else None,
+        hide_locality=athlete.hide_locality,
+        education_org=athlete.education_org,
         sports_disciplines=athlete.sports_disciplines,
         sports_qualification=athlete.sports_qualification,
         bio=athlete.bio,
@@ -662,6 +674,16 @@ def update_profile(
         if profile_data.full_name
         else None
     )
+    locality = (
+        profile_data.locality.strip()
+        if profile_data.locality
+        else None
+    )
+    education_org = (
+        profile_data.education_org.strip()
+        if profile_data.education_org
+        else None
+    )
     sports_disciplines = (
         profile_data.sports_disciplines.strip()
         if profile_data.sports_disciplines
@@ -712,6 +734,9 @@ def update_profile(
     current_user.bio = bio
     current_user.full_name = full_name
     current_user.hide_full_name = profile_data.hide_full_name
+    current_user.locality = locality
+    current_user.hide_locality = profile_data.hide_locality
+    current_user.education_org = education_org
     current_user.sports_disciplines = sports_disciplines
     current_user.team_status = profile_data.team_status
     current_user.team_name = (
