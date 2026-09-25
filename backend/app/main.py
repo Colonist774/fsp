@@ -2003,17 +2003,18 @@ def create_submission(
                 detail="Соревнование не найдено",
             )
 
-        if get_competition_status(competition) != "active":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Отправлять решения можно только во время соревнования",
-            )
+        if current_user.role != "organizer":
+            if get_competition_status(competition) != "active":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Отправлять решения можно только во время соревнования",
+                )
 
-        require_competition_task_access(
-            competition,
-            current_user,
-            db,
-        )
+            require_competition_task_access(
+                competition,
+                current_user,
+                db,
+            )
 
         if get_competition_task_link(
             db,
