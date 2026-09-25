@@ -2199,3 +2199,164 @@ nav a[aria-current="page"]::after {
   opacity: 0.55;
   cursor: default;
 }
+
+
+.athlete-header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.athlete-user-menu {
+  position: relative;
+}
+
+.athlete-user-menu-trigger {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.athlete-user-menu-trigger:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.athlete-user-menu-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  z-index: 15;
+  width: 240px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.athlete-user-menu-dropdown button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.athlete-user-menu-dropdown button:hover {
+  background: var(--surface-hover);
+}
+
+.organizer-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.organizer-confirm-modal {
+  width: min(100%, 480px);
+  padding: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.organizer-confirm-modal h2 {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.organizer-confirm-modal p {
+  margin: 0 0 18px;
+  color: #b8c0ca;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.organizer-confirm-modal input {
+  width: 100%;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.organizer-confirm-modal input:focus {
+  border-color: var(--accent);
+}
+
+.organizer-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.organizer-confirm-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.organizer-confirm-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.organizer-confirm-actions .organizer-confirm-submit {
+  border-color: #2f6fce;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.organizer-confirm-actions .organizer-confirm-submit:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.organizer-confirm-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  .athlete-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .organizer-confirm-actions {
+    flex-direction: column;
+  }
+
+  .organizer-confirm-actions button {
+    width: 100%;
+  }
+}
