@@ -579,16 +579,18 @@ export default function CompetitionPage() {
                           >
                             Редактировать
                           </button>
-                          <button
-                            className="competition-task-delete"
-                            type="button"
-                            disabled={deletingTaskId === task.task_id}
-                            onClick={() => deleteTask(task)}
-                          >
-                            {deletingTaskId === task.task_id
-                              ? "Удаление..."
-                              : "Удалить"}
-                          </button>
+                          {competition.status === "future" && (
+                            <button
+                              className="competition-task-delete"
+                              type="button"
+                              disabled={deletingTaskId === task.task_id}
+                              onClick={() => deleteTask(task)}
+                            >
+                              {deletingTaskId === task.task_id
+                                ? "Удаление..."
+                                : "Удалить"}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
