@@ -138,6 +138,10 @@ class CompetitionRegistration(Base):
         server_default=func.now(),
         nullable=False,
     )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
 
 class CompetitionResult(Base):
