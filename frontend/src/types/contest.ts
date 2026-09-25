@@ -24,6 +24,7 @@ export type Contest = {
   status: ContestStatus;
   registration_open: boolean;
   is_registered: boolean;
+  participation_finished: boolean;
   registered_count: number;
   created_by_user_id: number | null;
   created_at: string;
