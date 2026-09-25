@@ -2,9 +2,16 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+import os
 import subprocess
 import tempfile
+import time
 import uuid
+
+
+MAX_CAPTURED_OUTPUT_BYTES = 1024 * 1024
+MAX_WORKSPACE_BYTES = 32 * 1024 * 1024
+OUTPUT_POLL_INTERVAL_SECONDS = 0.02
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,14 @@ class RunResult:
     status: str
     stdout: str = ""
     stderr: str = ""
+
+
+@dataclass(frozen=True)
+class ContainerResult:
+    returncode: int
+    stdout: str = ""
+    stderr: str = ""
+    output_limit_exceeded: bool = False
 
 
 @dataclass(frozen=True)
@@ -39,10 +54,14 @@ class PreparedProgram:
             self.spec.run_command,
             stdin=stdin,
             timeout_seconds=time_limit_seconds,
+            workspace_read_only=True,
         )
 
         if run_result is None:
             return RunResult(status="time_limit_exceeded")
+
+        if run_result.output_limit_exceeded:
+            return RunResult(status="output_limit_exceeded")
 
         if run_result.returncode != 0:
             if _docker_error(run_result.stderr):
@@ -114,6 +133,39 @@ def _docker_error(stderr: str) -> bool:
     )
 
 
+def _force_remove_container(container_name: str) -> None:
+    subprocess.run(
+        ["docker", "rm", "-f", container_name],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def _read_output_file(file) -> str:
+    file.seek(0)
+    return file.read(MAX_CAPTURED_OUTPUT_BYTES).decode(
+        "utf-8",
+        errors="replace",
+    )
+
+
+def _workspace_size(workspace: Path) -> int:
+    total = 0
+
+    for item in workspace.rglob("*"):
+        try:
+            if item.is_file():
+                total += item.stat().st_size
+        except FileNotFoundError:
+            continue
+
+        if total > MAX_WORKSPACE_BYTES:
+            break
+
+    return total
+
+
 def _run_container(
     image: str,
     workspace: Path,
@@ -121,8 +173,10 @@ def _run_container(
     *,
     stdin: str = "",
     timeout_seconds: float,
-) -> subprocess.CompletedProcess[str] | None:
+    workspace_read_only: bool = False,
+) -> ContainerResult | None:
     container_name = f"fsp-judge-{uuid.uuid4().hex[:12]}"
+    mount_mode = "ro" if workspace_read_only else "rw"
 
     docker_command = [
         "docker",
@@ -150,7 +204,7 @@ def _run_container(
         "--ulimit",
         "nofile=64:64",
         "-v",
-        f"{workspace}:/workspace:rw",
+        f"{workspace}:/workspace:{mount_mode}",
         "-w",
         "/workspace",
         image,
@@ -158,27 +212,75 @@ def _run_container(
     ]
 
     try:
-        return subprocess.run(
-            docker_command,
-            input=stdin,
-            text=True,
-            capture_output=True,
-            timeout=timeout_seconds,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        subprocess.run(
-            ["docker", "rm", "-f", container_name],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return None
+        with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+            process = subprocess.Popen(
+                docker_command,
+                stdin=subprocess.PIPE,
+                stdout=stdout_file,
+                stderr=stderr_file,
+            )
+
+            try:
+                if process.stdin is not None:
+                    process.stdin.write(stdin.encode("utf-8"))
+                    process.stdin.close()
+
+                started_at = time.monotonic()
+                output_limit_exceeded = False
+                timed_out = False
+
+                while process.poll() is None:
+                    output_size = (
+                        os.fstat(stdout_file.fileno()).st_size
+                        + os.fstat(stderr_file.fileno()).st_size
+                    )
+
+                    if output_size > MAX_CAPTURED_OUTPUT_BYTES:
+                        output_limit_exceeded = True
+                        break
+
+                    if time.monotonic() - started_at > timeout_seconds:
+                        timed_out = True
+                        break
+
+                    time.sleep(OUTPUT_POLL_INTERVAL_SECONDS)
+
+                if output_limit_exceeded or timed_out:
+                    _force_remove_container(container_name)
+
+                    try:
+                        process.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+
+                if timed_out:
+                    return None
+
+                stdout = _read_output_file(stdout_file)
+                stderr = _read_output_file(stderr_file)
+
+                if output_limit_exceeded:
+                    return ContainerResult(
+                        returncode=process.returncode or 1,
+                        stdout=stdout,
+                        stderr=stderr,
+                        output_limit_exceeded=True,
+                    )
+
+                return ContainerResult(
+                    returncode=process.returncode or 0,
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+            finally:
+                if process.poll() is None:
+                    _force_remove_container(container_name)
+                    process.kill()
+                    process.wait()
     except FileNotFoundError:
-        return subprocess.CompletedProcess(
-            args=docker_command,
+        return ContainerResult(
             returncode=127,
-            stdout="",
             stderr="Docker CLI not found",
         )
 
@@ -200,20 +302,26 @@ def _compile_program(
     if compile_result is None:
         return RunResult(status="compilation_timeout")
 
-    if compile_result.returncode == 0:
-        return None
+    if compile_result.output_limit_exceeded:
+        return RunResult(status="output_limit_exceeded")
 
-    if _docker_error(compile_result.stderr):
+    if compile_result.returncode != 0:
+        if _docker_error(compile_result.stderr):
+            return RunResult(
+                status="runner_error",
+                stderr=compile_result.stderr,
+            )
+
         return RunResult(
-            status="runner_error",
+            status="compilation_error",
+            stdout=compile_result.stdout,
             stderr=compile_result.stderr,
         )
 
-    return RunResult(
-        status="compilation_error",
-        stdout=compile_result.stdout,
-        stderr=compile_result.stderr,
-    )
+    if _workspace_size(workspace) > MAX_WORKSPACE_BYTES:
+        return RunResult(status="output_limit_exceeded")
+
+    return None
 
 
 @contextmanager
