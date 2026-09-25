@@ -176,7 +176,7 @@ class CompetitionResultSummary(BaseModel):
 
 class UserStatistics(BaseModel):
     rating: int
-    rank: int
+    rank: int | None
     competitions: int
     wins: int
     podiums: int
