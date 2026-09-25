@@ -1272,6 +1272,20 @@ nav a[aria-current="page"]::after {
   width: min(100% - 48px, 900px);
 }
 
+.page-back {
+  margin-bottom: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.page-back:hover {
+  color: var(--text);
+}
+
 .competition-back {
   margin-bottom: 24px;
   padding: 0;
