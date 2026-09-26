@@ -157,7 +157,7 @@ export default function StatisticsPage() {
                       className="statistics-competition-row"
                       to={`/contests/${competition.competition_id}`}
                       state={{
-                        backTo: "/statistics",
+                        backTo: "/profile/stats",
                         backLabel: "← К профилю",
                       }}
                       key={competition.competition_id}
