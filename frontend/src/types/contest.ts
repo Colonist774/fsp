@@ -1,4 +1,4 @@
-export type ContestStatus = "active" | "past" | "future";
+export type ContestStatus = "draft" | "active" | "past" | "future";
 export type CompetitionLevel =
   | "russia"
   | "all_russian"
@@ -12,6 +12,7 @@ export type Contest = {
   readonly id: number;
   title: string;
   description: string;
+  rules: string;
   level: CompetitionLevel;
   discipline: string;
   format: CompetitionFormat;
@@ -26,6 +27,7 @@ export type Contest = {
   is_registered: boolean;
   participation_finished: boolean;
   registered_count: number;
+  published_at: string | null;
   created_by_user_id: number | null;
   created_at: string;
 };
