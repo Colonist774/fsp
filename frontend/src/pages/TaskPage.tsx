@@ -584,6 +584,37 @@ export default function TaskPage() {
               )}
           </div>
         </section>
+
+        {timeExpired &&
+          competitionId &&
+          role === "participant" && (
+            <div
+              className="task-time-expired-overlay"
+              role="presentation"
+            >
+              <div
+                className="task-time-expired-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="task-time-expired-title"
+              >
+                <h2 id="task-time-expired-title">
+                  Время для выполнения заданий истекло, ваши решения
+                  сохранены.
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/contests/${competitionId}`)
+                  }
+                >
+                  Выход
+                </button>
+              </div>
+            </div>
+          )}
+
         {isFinishConfirmOpen && (
           <div
             className="task-finish-confirm-overlay"

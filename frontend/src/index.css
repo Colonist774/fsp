@@ -3173,6 +3173,50 @@ nav a[aria-current="page"]::after {
 }
 
 
+.task-time-expired-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 7, 10, 0.76);
+}
+
+.task-time-expired-modal {
+  width: min(100%, 440px);
+  display: grid;
+  gap: 22px;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.task-time-expired-modal h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.task-time-expired-modal button {
+  min-height: 40px;
+  border: 1px solid #2f6fce;
+  border-radius: 6px;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-time-expired-modal button:hover {
+  background: var(--accent-hover);
+}
+
 .task-finish-confirm-overlay {
   position: fixed;
   inset: 0;
