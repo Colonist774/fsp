@@ -397,7 +397,13 @@ export default function CompetitionPage() {
         <button
           className="competition-back"
           type="button"
-          onClick={() => navigate("/")}
+          onClick={() =>
+            navigate(
+              competition.status === "active"
+                ? "/"
+                : `/?tab=${competition.status}`,
+            )
+          }
         >
           ← К соревнованиям
         </button>
