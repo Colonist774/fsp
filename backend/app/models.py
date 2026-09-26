@@ -86,6 +86,7 @@ class Competition(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
+    rules: Mapped[str] = mapped_column(Text, default="", server_default="", nullable=False)
     level: Mapped[str] = mapped_column(String(40), nullable=False)
     discipline: Mapped[str] = mapped_column(String(100), nullable=False)
     format: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -95,6 +96,10 @@ class Competition(Base):
     end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     registration_deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     results_finalized_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
