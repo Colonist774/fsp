@@ -192,10 +192,10 @@ export default function TaskPage() {
       return;
     }
 
+    const participationDeadline = competition.participation_deadline;
+
     function updateTimer() {
-      const deadline = new Date(
-        competition.participation_deadline as string,
-      ).getTime();
+      const deadline = new Date(participationDeadline).getTime();
       const seconds = Math.max(
         0,
         Math.ceil((deadline - Date.now()) / 1000),
