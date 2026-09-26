@@ -157,7 +157,10 @@ export default function CompetitionFormPage() {
             discipline: discipline.trim(),
             format,
             conduct_mode: conductMode,
-            venue: venue.trim() || null,
+            venue:
+              conductMode === "platform" && format === "online"
+                ? null
+                : venue.trim() || null,
             start_at: new Date(startAt).toISOString(),
             end_at: new Date(endAt).toISOString(),
             registration_deadline:
@@ -393,37 +396,40 @@ export default function CompetitionFormPage() {
                 />
               </label>
 
-              <label>
-                <span>Место проведения</span>
-                <input
-                  value={venue}
-                  onChange={(event) =>
-                    setVenue(event.target.value)
-                  }
-                  maxLength={255}
-                />
-              </label>
+              {!(conductMode === "platform" && format === "online") && (
+                <label>
+                  <span>Место проведения</span>
+                  <input
+                    value={venue}
+                    onChange={(event) =>
+                      setVenue(event.target.value)
+                    }
+                    maxLength={255}
+                  />
+                </label>
+              )}
             </div>
 
-            <label className="competition-form-checkbox">
-              <input
-                type="checkbox"
-                checked={publishTasks}
-                disabled={conductMode !== "platform"}
-                onChange={(event) =>
-                  setPublishTasks(event.target.checked)
-                }
-              />
-              <span>
-                Добавить задачи в сборник задач после завершения
-                турнира
-              </span>
-            </label>
-
             {conductMode === "platform" && (
-              <p className="competition-form-help">
-                Задачи добавляются на странице соревнования после его сохранения.
-              </p>
+              <>
+                <label className="competition-form-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={publishTasks}
+                    onChange={(event) =>
+                      setPublishTasks(event.target.checked)
+                    }
+                  />
+                  <span>
+                    Добавить задачи в сборник задач после завершения
+                    турнира
+                  </span>
+                </label>
+
+                <p className="competition-form-help">
+                  Задачи добавляются на странице соревнования после его сохранения.
+                </p>
+              </>
             )}
 
             {error && <div className="auth-error">{error}</div>}
