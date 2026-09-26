@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import ContestCard from "../components/ContestCard";
@@ -10,10 +10,16 @@ type CurrentUser = {
   role: "participant" | "organizer";
 };
 
+type SportDiscipline = {
+  id: number;
+  name: string;
+};
+
 export default function ContestsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
+  const selectedDiscipline = searchParams.get("discipline") ?? "";
   const selectedTab: SidebarButtons =
     tabParam === "draft" ||
     tabParam === "future" ||
@@ -22,7 +28,10 @@ export default function ContestsPage() {
       ? tabParam
       : "active";
   const [contests, setContests] = useState<Contest[]>([]);
+  const [disciplines, setDisciplines] = useState<SportDiscipline[]>([]);
   const [role, setRole] = useState<CurrentUser["role"]>("participant");
+  const [isDisciplineOpen, setIsDisciplineOpen] = useState(false);
+  const disciplineFilterRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,9 +43,14 @@ export default function ContestsPage() {
         : undefined;
 
       try {
-        const [competitionsResponse, meResponse] = await Promise.all([
+        const [
+          competitionsResponse,
+          meResponse,
+          disciplinesResponse,
+        ] = await Promise.all([
           fetch("http://127.0.0.1:8000/api/competitions", { headers }),
           fetch("http://127.0.0.1:8000/api/me", { headers }),
+          fetch("http://127.0.0.1:8000/api/disciplines", { headers }),
         ]);
 
         if (!competitionsResponse.ok) {
@@ -52,6 +66,12 @@ export default function ContestsPage() {
           const user: CurrentUser = await meResponse.json();
           setRole(user.role);
         }
+
+        if (disciplinesResponse.ok) {
+          const data: SportDiscipline[] =
+            await disciplinesResponse.json();
+          setDisciplines(data);
+        }
       } catch {
         setError("Не удалось подключиться к серверу");
       } finally {
@@ -62,9 +82,31 @@ export default function ContestsPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        disciplineFilterRef.current &&
+        !disciplineFilterRef.current.contains(event.target as Node)
+      ) {
+        setIsDisciplineOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
+
   const visibleContests = useMemo(() => {
     const filtered = contests.filter(
-      (contest) => contest.status === selectedTab,
+      (contest) =>
+        contest.status === selectedTab &&
+        (
+          !selectedDiscipline ||
+          contest.discipline === selectedDiscipline
+        ),
     );
 
     return [...filtered].sort((a, b) => {
@@ -75,19 +117,36 @@ export default function ContestsPage() {
         ? bTime - aTime
         : aTime - bTime;
     });
-  }, [contests, selectedTab]);
+  }, [contests, selectedTab, selectedDiscipline]);
 
   function selectTab(tab: SidebarButtons) {
+    const nextParams = new URLSearchParams(searchParams);
+
     if (tab === "active") {
-      setSearchParams({});
-      return;
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("tab", tab);
     }
 
-    setSearchParams({ tab });
+    setSearchParams(nextParams);
   }
 
-  const emptyText =
-    selectedTab === "draft"
+  function selectDiscipline(discipline: string) {
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (discipline) {
+      nextParams.set("discipline", discipline);
+    } else {
+      nextParams.delete("discipline");
+    }
+
+    setSearchParams(nextParams);
+    setIsDisciplineOpen(false);
+  }
+
+  const emptyText = selectedDiscipline
+    ? "В этой дисциплине соревнований пока нет"
+    : selectedTab === "draft"
       ? "Черновиков пока нет"
       : selectedTab === "active"
         ? "Сейчас нет активных соревнований"
@@ -130,6 +189,66 @@ export default function ContestsPage() {
           >
             Завершенные
           </button>
+
+          <div className="contest-sidebar-divider" />
+
+          <div
+            className="contest-discipline-filter"
+            ref={disciplineFilterRef}
+          >
+            <button
+              className={
+                selectedDiscipline
+                  ? "contest-discipline-button has-filter"
+                  : "contest-discipline-button"
+              }
+              type="button"
+              aria-expanded={isDisciplineOpen}
+              onClick={() =>
+                setIsDisciplineOpen((current) => !current)
+              }
+            >
+              <span>Дисциплина</span>
+              <span className="contest-discipline-chevron">⌄</span>
+            </button>
+
+            {selectedDiscipline && (
+              <div className="contest-discipline-current">
+                {selectedDiscipline}
+              </div>
+            )}
+
+            {isDisciplineOpen && (
+              <div className="contest-discipline-menu">
+                <button
+                  className={
+                    !selectedDiscipline ? "is-selected" : ""
+                  }
+                  type="button"
+                  onClick={() => selectDiscipline("")}
+                >
+                  Все дисциплины
+                </button>
+
+                {disciplines.map((discipline) => (
+                  <button
+                    className={
+                      selectedDiscipline === discipline.name
+                        ? "is-selected"
+                        : ""
+                    }
+                    type="button"
+                    key={discipline.id}
+                    onClick={() =>
+                      selectDiscipline(discipline.name)
+                    }
+                  >
+                    {discipline.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </aside>
 
         <section className="contest-content">
