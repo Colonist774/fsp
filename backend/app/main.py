@@ -1935,6 +1935,7 @@ def score_competition_submission(
 def get_competition_results(
     competition_id: int,
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
 ):
     competition = db.get(Competition, competition_id)
 
@@ -1979,6 +1980,17 @@ def get_competition_results(
         CompetitionResultRead(
             user_id=user.id,
             username=user.username,
+            full_name=(
+                user.full_name
+                if (
+                    not user.hide_full_name
+                    or (
+                        current_user is not None
+                        and current_user.role == "organizer"
+                    )
+                )
+                else None
+            ),
             score=(
                 standings[user.id][0]
                 if user.id in standings
