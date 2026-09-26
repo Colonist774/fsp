@@ -546,12 +546,16 @@ export default function CompetitionPage() {
               {formatDateTime(competition.registration_deadline)}
             </strong>
           </div>
-          {competition.venue && (
-            <div>
-              <span>Место проведения</span>
-              <strong>{competition.venue}</strong>
-            </div>
-          )}
+          {competition.venue &&
+            !(
+              competition.conduct_mode === "platform" &&
+              competition.format === "online"
+            ) && (
+              <div>
+                <span>Место проведения</span>
+                <strong>{competition.venue}</strong>
+              </div>
+            )}
           <div>
             <span>Участников</span>
             <strong>{competition.registered_count}</strong>
