@@ -7,6 +7,7 @@ export type Task = {
   readonly id: number;
   title: string;
   difficulty: number;
+  discipline: string;
   solved: boolean;
 
   description: string;

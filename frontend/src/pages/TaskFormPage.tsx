@@ -14,10 +14,16 @@ type TestCase = {
   expected_output: string;
 };
 
+type SportDiscipline = {
+  id: number;
+  name: string;
+};
+
 type TaskOrganizerRead = {
   id: number;
   title: string;
   difficulty: number;
+  discipline: string;
   points: number;
   description: string;
   input: string;
@@ -42,6 +48,10 @@ export default function TaskFormPage() {
 
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState(1);
+  const [discipline, setDiscipline] = useState(
+    "Алгоритмическое программирование",
+  );
+  const [disciplines, setDisciplines] = useState<SportDiscipline[]>([]);
   const [points, setPoints] = useState(100);
   const [description, setDescription] = useState("");
   const [inputFormat, setInputFormat] = useState("");
@@ -113,9 +123,11 @@ export default function TaskFormPage() {
 
         const competitionData: {
           evaluation_mode: CompetitionEvaluationMode;
+          discipline: string;
         } = await competitionResponse.json();
 
         setEvaluationMode(competitionData.evaluation_mode);
+        setDiscipline(competitionData.discipline);
         setAllowed(true);
 
         if (!isEditing || !taskId) {
@@ -143,6 +155,7 @@ export default function TaskFormPage() {
 
         setTitle(task.title);
         setDifficulty(task.difficulty);
+        setDiscipline(task.discipline);
         setPoints(task.points);
         setDescription(task.description);
         setInputFormat(task.input);
@@ -169,6 +182,38 @@ export default function TaskFormPage() {
 
     loadPage();
   }, [competitionId, taskId, isEditing]);
+
+  useEffect(() => {
+    async function loadDisciplines() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/disciplines",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data: SportDiscipline[] = await response.json();
+        setDisciplines(data);
+      } catch {
+        return;
+      }
+    }
+
+    loadDisciplines();
+  }, []);
 
   function updateCase(
     setter: Dispatch<SetStateAction<TestCase[]>>,
@@ -240,6 +285,7 @@ export default function TaskFormPage() {
           body: JSON.stringify({
             title: title.trim(),
             difficulty,
+            discipline,
             points,
             description: description.trim(),
             input: inputFormat.trim(),
@@ -349,6 +395,34 @@ export default function TaskFormPage() {
                   <option value={5}>5 звёзд</option>
                 </select>
               </label>
+
+              {!isCompetitionTask && (
+                <label>
+                  <span>Дисциплина</span>
+                  <select
+                    value={discipline}
+                    onChange={(event) =>
+                      setDiscipline(event.target.value)
+                    }
+                    required
+                  >
+                    {discipline &&
+                      !disciplines.some(
+                        (item) => item.name === discipline,
+                      ) && (
+                        <option value={discipline}>
+                          {discipline}
+                        </option>
+                      )}
+
+                    {disciplines.map((item) => (
+                      <option key={item.id} value={item.name}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               {isCompetitionTask && (
                 <label className="task-author-difficulty">
