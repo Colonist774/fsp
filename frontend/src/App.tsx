@@ -19,6 +19,7 @@ import CompetitionSubmissionsPage from "./pages/CompetitionSubmissionsPage";
 import AthletePage from "./pages/AthletePage";
 import OrganizerAccessPage from "./pages/OrganizerAccessPage";
 import PlatformSettingsPage from "./pages/PlatformSettingsPage";
+import TeamPage from "./pages/TeamPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -270,6 +271,7 @@ export default function App() {
         element={<TaskFormPage />}
       />
       <Route path="/profile/edit" element={<EditProfilePage />} />
+      <Route path="/team" element={<TeamPage />} />
       <Route path="/profile/stats" element={<StatisticsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

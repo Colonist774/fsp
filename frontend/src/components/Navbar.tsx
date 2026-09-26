@@ -128,6 +128,18 @@ export default function Navbar() {
               Редактировать профиль
             </button>
 
+            {role === "participant" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate("/team");
+                }}
+              >
+                Команда
+              </button>
+            )}
+
             {role === "organizer" && (
               <>
                 <button

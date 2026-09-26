@@ -4585,3 +4585,321 @@ nav a[aria-current="page"]::after {
     min-width: 590px;
   }
 }
+
+
+.profile-team-member-note {
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0d1117;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.team-page {
+  width: min(100% - 48px, 900px);
+}
+
+.team-error {
+  margin-bottom: 18px;
+}
+
+.team-empty {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.team-empty h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.team-empty p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.team-create-form {
+  width: min(100%, 420px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.team-create-form input,
+.team-rename-form input,
+.team-add-member input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.team-create-form input:focus,
+.team-rename-form input:focus,
+.team-add-member input:focus {
+  border-color: var(--accent);
+}
+
+.team-create-form button,
+.team-rename-form button,
+.team-add-member button,
+.team-member-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.team-create-form button,
+.team-add-member button {
+  border-color: #2f6fce;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.team-create-form button:hover:not(:disabled),
+.team-add-member button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.team-rename-form button:hover:not(:disabled),
+.team-member-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.team-create-form button:disabled,
+.team-rename-form button:disabled,
+.team-add-member button:disabled,
+.team-member-actions button:disabled,
+.team-leave:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.team-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.team-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-header > div > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.team-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.team-rename-form,
+.team-add-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-rename-form input {
+  width: 220px;
+}
+
+.team-members-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-members-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.team-members-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.team-members-heading > div > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.team-add-member input {
+  width: 190px;
+}
+
+.team-members-list {
+  display: grid;
+}
+
+.team-member-row {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-member-row:last-child {
+  border-bottom: 0;
+}
+
+.team-member-identity {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.team-member-identity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.team-member-identity span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.team-member-role span {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid #365f91;
+  border-radius: 999px;
+  background: #14243a;
+  color: #79b8ff;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.team-member-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.team-member-actions .team-member-remove {
+  border-color: #5e2b2b;
+  color: #ff9b96;
+}
+
+.team-member-actions .team-member-remove:hover:not(:disabled) {
+  background: #211315;
+}
+
+.team-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+}
+
+.team-leave {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid #6b3030;
+  border-radius: 6px;
+  background: #2a1517;
+  color: #ff9b96;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.team-leave:hover:not(:disabled) {
+  background: #35191c;
+}
+
+@media (max-width: 700px) {
+  .team-page {
+    width: min(100% - 28px, 900px);
+  }
+
+  .team-create-form,
+  .team-header,
+  .team-members-heading,
+  .team-member-row {
+    grid-template-columns: 1fr;
+  }
+
+  .team-header,
+  .team-members-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .team-rename-form,
+  .team-add-member {
+    width: 100%;
+  }
+
+  .team-rename-form input,
+  .team-add-member input {
+    width: 100%;
+  }
+
+  .team-member-row {
+    display: grid;
+  }
+
+  .team-member-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .team-footer {
+    justify-content: stretch;
+  }
+
+  .team-leave {
+    width: 100%;
+  }
+}

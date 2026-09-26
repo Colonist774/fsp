@@ -40,7 +40,6 @@ export default function EditProfilePage() {
   const [sportsDisciplines, setSportsDisciplines] = useState("");
   const [disciplines, setDisciplines] = useState<SportDiscipline[]>([]);
   const [teamStatus, setTeamStatus] = useState<TeamStatus>("solo");
-  const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +81,6 @@ export default function EditProfilePage() {
         setEducationOrg(user.education_org ?? "");
         setSportsDisciplines(user.sports_disciplines ?? "");
         setTeamStatus(user.team_status);
-        setTeamName(user.team_name ?? "");
       } catch {
         setError("Не удалось подключиться к серверу");
       } finally {
@@ -131,7 +129,6 @@ export default function EditProfilePage() {
     const token = localStorage.getItem("token");
     const normalizedUsername = username.trim();
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedTeamName = teamName.trim();
 
     if (!token) {
       setError("Требуется авторизация");
@@ -145,11 +142,6 @@ export default function EditProfilePage() {
 
     if (!normalizedEmail) {
       setError("Введите email");
-      return;
-    }
-
-    if (teamStatus === "member" && !normalizedTeamName) {
-      setError("Укажите название команды");
       return;
     }
 
@@ -177,8 +169,7 @@ export default function EditProfilePage() {
             education_org: educationOrg.trim() || null,
             sports_disciplines: sportsDisciplines.trim() || null,
             team_status: teamStatus,
-            team_name:
-              teamStatus === "member" ? normalizedTeamName : null,
+            team_name: null,
           }),
         },
       );
@@ -204,7 +195,6 @@ export default function EditProfilePage() {
       setEducationOrg(data.education_org ?? "");
       setSportsDisciplines(data.sports_disciplines ?? "");
       setTeamStatus(data.team_status);
-      setTeamName(data.team_name ?? "");
       setSaved(true);
       window.dispatchEvent(new Event("profile-updated"));
     } catch {
@@ -354,37 +344,24 @@ export default function EditProfilePage() {
 
           <label>
             <span>Статус команды</span>
-            <select
-              value={teamStatus}
-              onChange={(event) => {
-                const value = event.target.value as TeamStatus;
-                setTeamStatus(value);
-
-                if (value !== "member") {
-                  setTeamName("");
+            {teamStatus === "member" ? (
+              <div className="profile-team-member-note">
+                Вы состоите в команде. Управление командой доступно
+                в отдельном разделе «Команда».
+              </div>
+            ) : (
+              <select
+                value={teamStatus}
+                onChange={(event) =>
+                  setTeamStatus(event.target.value as TeamStatus)
                 }
-              }}
-              disabled={isLoading || isSaving}
-            >
-              <option value="member">В команде</option>
-              <option value="looking">В поиске</option>
-              <option value="solo">Не заинтересован</option>
-            </select>
-          </label>
-
-          {teamStatus === "member" && (
-            <label>
-              <span>Название команды</span>
-              <input
-                type="text"
-                value={teamName}
-                onChange={(event) => setTeamName(event.target.value)}
-                maxLength={100}
                 disabled={isLoading || isSaving}
-                required
-              />
-            </label>
-          )}
+              >
+                <option value="looking">В поиске</option>
+                <option value="solo">Не заинтересован</option>
+              </select>
+            )}
+          </label>
 
           {error && <div className="auth-error">{error}</div>}
           {saved && (
