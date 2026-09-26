@@ -156,6 +156,10 @@ export default function StatisticsPage() {
                     <Link
                       className="statistics-competition-row"
                       to={`/contests/${competition.competition_id}`}
+                      state={{
+                        backTo: "/statistics",
+                        backLabel: "← К профилю",
+                      }}
                       key={competition.competition_id}
                     >
                       <div>
