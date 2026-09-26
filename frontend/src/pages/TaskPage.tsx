@@ -17,7 +17,8 @@ type SubmissionStatus =
   | "output_limit_exceeded"
   | "runner_error"
   | "no_tests"
-  | "pending_review";
+  | "pending_review"
+  | "reviewed";
 
 type CompetitionTask = {
   task_id: number;
@@ -50,6 +51,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
   runner_error: "Ошибка системы проверки",
   no_tests: "Нет тестов",
   pending_review: "Ожидает ручной проверки",
+  reviewed: "Проверено",
 };
 
 export default function TaskPage() {

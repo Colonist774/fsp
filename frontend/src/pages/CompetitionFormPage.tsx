@@ -422,11 +422,15 @@ export default function CompetitionFormPage() {
                   <span>Система оценки</span>
                   <select
                     value={evaluationMode}
-                    onChange={(event) =>
-                      setEvaluationMode(
-                        event.target.value as CompetitionEvaluationMode,
-                      )
-                    }
+                    onChange={(event) => {
+                      const value =
+                        event.target.value as CompetitionEvaluationMode;
+                      setEvaluationMode(value);
+
+                      if (value === "manual") {
+                        setPublishTasks(false);
+                      }
+                    }}
                   >
                     <option value="automatic">
                       Автоматическая проверка
@@ -447,6 +451,8 @@ export default function CompetitionFormPage() {
                       ? "Система проверяет решения автоматически, а организатор может изменить оценку вручную."
                       : "Решения оценивает организатор. Скрытые тесты для задач не требуются."}
                 </p>
+                {evaluationMode !== "manual" ? (
+                  <>
                 <label className="competition-form-checkbox">
                   <input
                     type="checkbox"
@@ -464,6 +470,13 @@ export default function CompetitionFormPage() {
                 <p className="competition-form-help">
                   Задачи добавляются на странице соревнования после его сохранения.
                 </p>
+                  </>
+                ) : (
+                  <p className="competition-form-help">
+                    Задачи с ручной проверкой не добавляются в автоматический
+                    сборник задач после завершения.
+                  </p>
+                )}
               </>
             )}
 

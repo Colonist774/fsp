@@ -1317,6 +1317,9 @@ def create_competition(
         competition_values["publish_tasks_after_finish"] = False
         competition_values["evaluation_mode"] = "automatic"
 
+    if competition_values["evaluation_mode"] == "manual":
+        competition_values["publish_tasks_after_finish"] = False
+
     competition = Competition(
         **competition_values,
         created_by_user_id=current_user.id,
@@ -1369,6 +1372,9 @@ def update_competition(
     if competition_data.conduct_mode == "external":
         competition_values["publish_tasks_after_finish"] = False
         competition_values["evaluation_mode"] = "automatic"
+
+    if competition_values["evaluation_mode"] == "manual":
+        competition_values["publish_tasks_after_finish"] = False
 
     for field, value in competition_values.items():
         setattr(competition, field, value)
@@ -1977,6 +1983,11 @@ def score_competition_submission(
         if score_data.score is not None
         else None
     )
+
+    if competition.evaluation_mode == "manual":
+        submission.status = (
+            "reviewed" if score_data.score is not None else "pending_review"
+        )
 
     if get_competition_status(competition) == "past":
         competition.results_finalized_at = None

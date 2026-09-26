@@ -29,6 +29,7 @@ const statusLabels: Record<string, string> = {
   pending: "В очереди",
   running: "Проверяется",
   pending_review: "Ожидает ручной проверки",
+  reviewed: "Проверено",
 };
 
 const languageLabels = {
