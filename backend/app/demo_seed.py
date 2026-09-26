@@ -444,6 +444,7 @@ def get_or_create_competition(
         start_at=start_at,
         end_at=end_at,
         registration_deadline=registration_deadline,
+        published_at=base,
         publish_tasks_after_finish=(conduct_mode == "platform"),
         created_by_user_id=created_by_user_id,
     )
