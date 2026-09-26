@@ -28,6 +28,7 @@ CompetitionLevel = Literal[
 ]
 CompetitionFormat = Literal["online", "offline", "hybrid"]
 CompetitionConductMode = Literal["platform", "external"]
+CompetitionEvaluationMode = Literal["automatic", "hybrid", "manual"]
 CompetitionStatus = Literal["draft", "future", "active", "past"]
 
 
@@ -39,6 +40,7 @@ class CompetitionBase(BaseModel):
     discipline: str = Field(min_length=2, max_length=100)
     format: CompetitionFormat
     conduct_mode: CompetitionConductMode
+    evaluation_mode: CompetitionEvaluationMode = "automatic"
     venue: str | None = Field(default=None, max_length=255)
     start_at: datetime
     end_at: datetime
@@ -126,7 +128,7 @@ class TaskBase(BaseModel):
 class TaskOrganizerCreate(TaskBase):
     points: int = Field(default=100, ge=1, le=10000)
     examples: list[TaskExampleData] = Field(min_length=1, max_length=10)
-    tests: list[TaskTestData] = Field(min_length=1, max_length=100)
+    tests: list[TaskTestData] = Field(default_factory=list, max_length=100)
 
 
 class TaskRead(TaskBase):

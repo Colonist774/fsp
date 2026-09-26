@@ -157,6 +157,7 @@ def seed_case_demo() -> None:
             discipline="Алгоритмическое программирование",
             format="online",
             conduct_mode="platform",
+            evaluation_mode="hybrid",
             venue=None,
             start_at=start_at,
             end_at=end_at,

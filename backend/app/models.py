@@ -91,6 +91,12 @@ class Competition(Base):
     discipline: Mapped[str] = mapped_column(String(100), nullable=False)
     format: Mapped[str] = mapped_column(String(20), nullable=False)
     conduct_mode: Mapped[str] = mapped_column(String(20), nullable=False)
+    evaluation_mode: Mapped[str] = mapped_column(
+        String(20),
+        default="automatic",
+        server_default="automatic",
+        nullable=False,
+    )
     venue: Mapped[str | None] = mapped_column(String(255), nullable=True)
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -1207,6 +1207,7 @@ def build_competition_read(
         discipline=competition.discipline,
         format=competition.format,
         conduct_mode=competition.conduct_mode,
+        evaluation_mode=competition.evaluation_mode,
         venue=competition.venue,
         start_at=competition.start_at,
         end_at=competition.end_at,
@@ -1314,6 +1315,7 @@ def create_competition(
 
     if competition_data.conduct_mode == "external":
         competition_values["publish_tasks_after_finish"] = False
+        competition_values["evaluation_mode"] = "automatic"
 
     competition = Competition(
         **competition_values,
@@ -1366,6 +1368,7 @@ def update_competition(
 
     if competition_data.conduct_mode == "external":
         competition_values["publish_tasks_after_finish"] = False
+        competition_values["evaluation_mode"] = "automatic"
 
     for field, value in competition_values.items():
         setattr(competition, field, value)
@@ -1420,6 +1423,7 @@ def publish_competition(
             discipline=competition.discipline,
             format=competition.format,
             conduct_mode=competition.conduct_mode,
+            evaluation_mode=competition.evaluation_mode,
             venue=competition.venue,
             start_at=competition.start_at,
             end_at=competition.end_at,
@@ -1427,6 +1431,35 @@ def publish_competition(
             publish_tasks_after_finish=competition.publish_tasks_after_finish,
         )
     )
+
+    if (
+        competition.conduct_mode == "platform"
+        and competition.evaluation_mode != "manual"
+    ):
+        task_ids = db.scalars(
+            select(CompetitionTask.task_id).where(
+                CompetitionTask.competition_id == competition_id
+            )
+        ).all()
+
+        for task_id in task_ids:
+            hidden_test_id = db.scalar(
+                select(TaskTest.id)
+                .where(
+                    TaskTest.task_id == task_id,
+                    TaskTest.is_hidden.is_(True),
+                )
+                .limit(1)
+            )
+
+            if hidden_test_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Для автоматической или гибридной проверки "
+                        "добавьте скрытые тесты ко всем задачам"
+                    ),
+                )
 
     competition.published_at = datetime.now(timezone.utc)
     db.commit()
@@ -1518,7 +1551,16 @@ def get_platform_competition_standings(
 
             max_points = points_by_task[task_id]
 
-            if manual_score is not None:
+            if competition.evaluation_mode == "manual":
+                candidate_score = (
+                    min(manual_score, max_points)
+                    if manual_score is not None
+                    else 0
+                )
+            elif (
+                competition.evaluation_mode == "hybrid"
+                and manual_score is not None
+            ):
                 candidate_score = min(manual_score, max_points)
             elif (
                 submission_status == "accepted"
@@ -1872,6 +1914,15 @@ def score_competition_submission(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="У внешнего соревнования нет решений на платформе",
+        )
+
+    if competition.evaluation_mode == "automatic":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "В соревновании с автоматической проверкой "
+                "ручная оценка отключена"
+            ),
         )
 
     submission = db.scalar(
@@ -2641,6 +2692,15 @@ def create_competition_task(
             detail="Задачи можно добавлять только для соревнований на платформе",
         )
 
+    if competition.evaluation_mode != "manual" and not task_data.tests:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Для автоматической или гибридной проверки "
+                "нужен хотя бы один скрытый тест"
+            ),
+        )
+
     if get_competition_status(competition) not in ("draft", "future"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -2762,6 +2822,15 @@ def update_competition_task(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Задача не найдена в этом соревновании",
+        )
+
+    if competition.evaluation_mode != "manual" and not task_data.tests:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Для автоматической или гибридной проверки "
+                "нужен хотя бы один скрытый тест"
+            ),
         )
 
     task = db.scalar(
@@ -3025,6 +3094,8 @@ def create_submission(
             detail="Задача не найдена",
         )
 
+    should_judge = True
+
     if submission_data.competition_id is not None:
         competition = db.get(
             Competition,
@@ -3036,6 +3107,8 @@ def create_submission(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Соревнование не найдено",
             )
+
+        should_judge = competition.evaluation_mode != "manual"
 
         if current_user.role != "organizer":
             if get_competition_status(
@@ -3090,7 +3163,7 @@ def create_submission(
         user_id=current_user.id,
         code=submission_data.code,
         language=submission_data.language,
-        status="pending",
+        status="pending" if should_judge else "pending_review",
         created_at=submitted_at,
     )
 
@@ -3098,10 +3171,13 @@ def create_submission(
     db.commit()
     db.refresh(submission)
 
-    judged_submission = judge_submission(
-        db,
-        submission,
-    )
+    if should_judge:
+        judged_submission = judge_submission(
+            db,
+            submission,
+        )
+    else:
+        judged_submission = submission
 
     if (
         submission_data.competition_id is not None
