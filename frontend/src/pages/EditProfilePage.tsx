@@ -4,6 +4,11 @@ import Navbar from "../components/Navbar";
 
 type TeamStatus = "member" | "looking" | "solo";
 
+type SportDiscipline = {
+  id: number;
+  name: string;
+};
+
 type CurrentUser = {
   username: string;
   email: string | null;
@@ -33,6 +38,7 @@ export default function EditProfilePage() {
   const [hideLocality, setHideLocality] = useState(false);
   const [educationOrg, setEducationOrg] = useState("");
   const [sportsDisciplines, setSportsDisciplines] = useState("");
+  const [disciplines, setDisciplines] = useState<SportDiscipline[]>([]);
   const [teamStatus, setTeamStatus] = useState<TeamStatus>("solo");
   const [teamName, setTeamName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +91,38 @@ export default function EditProfilePage() {
     }
 
     loadProfile();
+  }, []);
+
+  useEffect(() => {
+    async function loadDisciplines() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/disciplines",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data: SportDiscipline[] = await response.json();
+        setDisciplines(data);
+      } catch {
+        return;
+      }
+    }
+
+    loadDisciplines();
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -259,16 +297,31 @@ export default function EditProfilePage() {
           </label>
 
           <label>
-            <span>Спортивные дисциплины</span>
-            <input
-              type="text"
+            <span>Спортивная дисциплина</span>
+            <select
               value={sportsDisciplines}
               onChange={(event) =>
                 setSportsDisciplines(event.target.value)
               }
-              maxLength={255}
               disabled={isLoading || isSaving}
-            />
+            >
+              <option value="">Не выбрано</option>
+
+              {sportsDisciplines &&
+                !disciplines.some(
+                  (item) => item.name === sportsDisciplines,
+                ) && (
+                  <option value={sportsDisciplines}>
+                    {sportsDisciplines}
+                  </option>
+                )}
+
+              {disciplines.map((item) => (
+                <option key={item.id} value={item.name}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label>

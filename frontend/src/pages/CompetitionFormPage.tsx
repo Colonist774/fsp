@@ -19,6 +19,11 @@ function toDateTimeLocal(value: string) {
 
 type ExecutionTimeUnit = "minutes" | "hours" | "days";
 
+type SportDiscipline = {
+  id: number;
+  name: string;
+};
+
 function splitExecutionTime(totalMinutes: number | null) {
   const minutes = totalMinutes ?? 180;
 
@@ -70,6 +75,7 @@ export default function CompetitionFormPage() {
   const [discipline, setDiscipline] = useState(
     "Алгоритмическое программирование",
   );
+  const [disciplines, setDisciplines] = useState<SportDiscipline[]>([]);
   const [format, setFormat] =
     useState<CompetitionFormat>("online");
   const [conductMode, setConductMode] =
@@ -176,6 +182,38 @@ export default function CompetitionFormPage() {
 
     loadPage();
   }, [id, isEditing]);
+
+  useEffect(() => {
+    async function loadDisciplines() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/disciplines",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data: SportDiscipline[] = await response.json();
+        setDisciplines(data);
+      } catch {
+        return;
+      }
+    }
+
+    loadDisciplines();
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -372,14 +410,28 @@ export default function CompetitionFormPage() {
 
               <label>
                 <span>Дисциплина</span>
-                <input
+                <select
                   value={discipline}
                   onChange={(event) =>
                     setDiscipline(event.target.value)
                   }
-                  maxLength={100}
                   required
-                />
+                >
+                  {discipline &&
+                    !disciplines.some(
+                      (item) => item.name === discipline,
+                    ) && (
+                      <option value={discipline}>
+                        {discipline}
+                      </option>
+                    )}
+
+                  {disciplines.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label>
