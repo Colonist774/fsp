@@ -22,6 +22,7 @@ type CompetitionParticipant = {
 type CompetitionResult = {
   user_id: number;
   username: string;
+  full_name: string | null;
   score: number | null;
   place: number | null;
   rating_points: number;
@@ -150,9 +151,15 @@ export default function CompetitionPage() {
   }
 
   async function loadResults() {
+    const token = localStorage.getItem("token");
+    const headers = token
+      ? { Authorization: `Bearer ${token}` }
+      : undefined;
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/api/competitions/${id}/results`,
+        { headers },
       );
 
       if (!response.ok) {
@@ -721,7 +728,7 @@ export default function CompetitionPage() {
                     className="competition-athlete-link"
                     to={`/athletes/${result.user_id}`}
                   >
-                    {result.username}
+                    {result.full_name || result.username}
                   </Link>
                   {competition.conduct_mode === "platform" && (
                     <strong className="competition-score">
