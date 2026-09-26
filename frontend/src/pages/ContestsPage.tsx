@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import ContestCard from "../components/ContestCard";
 import type { Contest, ContestStatus } from "../types/contest";
@@ -12,7 +12,12 @@ type CurrentUser = {
 
 export default function ContestsPage() {
   const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState<SidebarButtons>("active");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const selectedTab: SidebarButtons =
+    tabParam === "future" || tabParam === "past" || tabParam === "active"
+      ? tabParam
+      : "active";
   const [contests, setContests] = useState<Contest[]>([]);
   const [role, setRole] = useState<CurrentUser["role"]>("participant");
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +74,15 @@ export default function ContestsPage() {
     });
   }, [contests, selectedTab]);
 
+  function selectTab(tab: SidebarButtons) {
+    if (tab === "active") {
+      setSearchParams({});
+      return;
+    }
+
+    setSearchParams({ tab });
+  }
+
   const emptyText =
     selectedTab === "active"
       ? "Сейчас нет активных соревнований"
@@ -84,21 +98,21 @@ export default function ContestsPage() {
         <aside className="contest-sidebar">
           <button
             className={selectedTab === "active" ? "is-active" : ""}
-            onClick={() => setSelectedTab("active")}
+            onClick={() => selectTab("active")}
           >
             Активные
           </button>
 
           <button
             className={selectedTab === "future" ? "is-active" : ""}
-            onClick={() => setSelectedTab("future")}
+            onClick={() => selectTab("future")}
           >
             Предстоящие
           </button>
 
           <button
             className={selectedTab === "past" ? "is-active" : ""}
-            onClick={() => setSelectedTab("past")}
+            onClick={() => selectTab("past")}
           >
             Завершенные
           </button>
