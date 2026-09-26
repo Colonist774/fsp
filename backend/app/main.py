@@ -1395,6 +1395,11 @@ def update_sport_discipline(
         .where(User.sports_disciplines == old_name)
         .values(sports_disciplines=name)
     )
+    db.execute(
+        update(Task)
+        .where(Task.discipline == old_name)
+        .values(discipline=name)
+    )
 
     db.commit()
     db.refresh(discipline)
@@ -1548,6 +1553,7 @@ def update_competition(
     validate_competition_data(competition_data)
 
     competition_values = competition_data.model_dump()
+    old_discipline = competition.discipline
 
     if (
         competition_data.conduct_mode == "platform"
@@ -1565,6 +1571,16 @@ def update_competition(
 
     for field, value in competition_values.items():
         setattr(competition, field, value)
+
+    if competition.discipline != old_discipline:
+        task_ids = select(CompetitionTask.task_id).where(
+            CompetitionTask.competition_id == competition_id
+        )
+        db.execute(
+            update(Task)
+            .where(Task.id.in_(task_ids))
+            .values(discipline=competition.discipline)
+        )
 
     db.flush()
 
@@ -2639,6 +2655,7 @@ def build_task_read(
         id=task.id,
         title=task.title,
         difficulty=task.difficulty,
+        discipline=task.discipline,
         solved=solved,
         description=task.description,
         input=task.input,
@@ -2997,6 +3014,7 @@ def create_competition_task(
     task = Task(
         title=task_data.title.strip(),
         difficulty=task_data.difficulty,
+        discipline=competition.discipline,
         description=task_data.description.strip(),
         input=task_data.input.strip(),
         output=task_data.output.strip(),
@@ -3160,6 +3178,7 @@ def update_competition_task(
 
     task.title = task_data.title.strip()
     task.difficulty = task_data.difficulty
+    task.discipline = competition.discipline
     task.description = task_data.description.strip()
     task.input = task_data.input.strip()
     task.output = task_data.output.strip()
@@ -3337,6 +3356,7 @@ def create_collection_task(
     task = Task(
         title=task_data.title.strip(),
         difficulty=task_data.difficulty,
+        discipline=task_data.discipline.strip(),
         description=task_data.description.strip(),
         input=task_data.input.strip(),
         output=task_data.output.strip(),
