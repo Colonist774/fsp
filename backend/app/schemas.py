@@ -78,6 +78,13 @@ class CompetitionRead(CompetitionBase):
     created_at: datetime
 
 
+class CompetitionStartNotificationRead(BaseModel):
+    competition_id: int
+    title: str
+    start_at: datetime
+    end_at: datetime
+
+
 class CompetitionParticipantRead(BaseModel):
     user_id: int
     username: str

@@ -178,6 +178,10 @@ class CompetitionRegistration(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    start_notification_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

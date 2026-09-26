@@ -38,6 +38,7 @@ from app.schemas import (
     SportDisciplineRead,
     CompetitionParticipantRead,
     CompetitionRead,
+    CompetitionStartNotificationRead,
     CompetitionResultRead,
     CompetitionResultUpdate,
     CompetitionSubmissionDraftRead,
@@ -2397,6 +2398,78 @@ def save_competition_result(
     )
 
 
+@app.get(
+    "/api/notifications/competition-start",
+    response_model=list[CompetitionStartNotificationRead],
+)
+def get_competition_start_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != "participant":
+        return []
+
+    now = datetime.now(timezone.utc)
+
+    rows = db.execute(
+        select(CompetitionRegistration, Competition)
+        .join(
+            Competition,
+            Competition.id == CompetitionRegistration.competition_id,
+        )
+        .where(
+            CompetitionRegistration.user_id == current_user.id,
+            CompetitionRegistration.started_at.is_(None),
+            CompetitionRegistration.finished_at.is_(None),
+            CompetitionRegistration.start_notification_seen_at.is_(None),
+            Competition.published_at.is_not(None),
+            Competition.conduct_mode == "platform",
+            Competition.start_at <= now,
+            Competition.end_at >= now,
+        )
+        .order_by(Competition.start_at)
+    ).all()
+
+    return [
+        CompetitionStartNotificationRead(
+            competition_id=competition.id,
+            title=competition.title,
+            start_at=competition.start_at,
+            end_at=competition.end_at,
+        )
+        for _, competition in rows
+    ]
+
+
+@app.post(
+    "/api/notifications/competition-start/{competition_id}/seen",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def mark_competition_start_notification_seen(
+    competition_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    registration = db.scalar(
+        select(CompetitionRegistration)
+        .where(
+            CompetitionRegistration.competition_id == competition_id,
+            CompetitionRegistration.user_id == current_user.id,
+        )
+        .with_for_update()
+    )
+
+    if registration is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Регистрация на соревнование не найдена",
+        )
+
+    if registration.start_notification_seen_at is None:
+        registration.start_notification_seen_at = datetime.now(timezone.utc)
+        db.commit()
+
+
 @app.post(
     "/api/competitions/{competition_id}/register",
     response_model=CompetitionRead,
@@ -2506,7 +2579,11 @@ def start_competition_participation(
         )
 
     if registration.started_at is None:
-        registration.started_at = datetime.now(timezone.utc)
+        started_at = datetime.now(timezone.utc)
+        registration.started_at = started_at
+        registration.start_notification_seen_at = (
+            registration.start_notification_seen_at or started_at
+        )
         db.commit()
         db.refresh(registration)
 
