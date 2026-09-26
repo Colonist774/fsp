@@ -1296,8 +1296,19 @@ def create_competition(
 ):
     validate_competition_data(competition_data)
 
+    competition_values = competition_data.model_dump()
+
+    if (
+        competition_data.conduct_mode == "platform"
+        and competition_data.format == "online"
+    ):
+        competition_values["venue"] = None
+
+    if competition_data.conduct_mode == "external":
+        competition_values["publish_tasks_after_finish"] = False
+
     competition = Competition(
-        **competition_data.model_dump(),
+        **competition_values,
         created_by_user_id=current_user.id,
     )
 
@@ -1337,7 +1348,18 @@ def update_competition(
 
     validate_competition_data(competition_data)
 
-    for field, value in competition_data.model_dump().items():
+    competition_values = competition_data.model_dump()
+
+    if (
+        competition_data.conduct_mode == "platform"
+        and competition_data.format == "online"
+    ):
+        competition_values["venue"] = None
+
+    if competition_data.conduct_mode == "external":
+        competition_values["publish_tasks_after_finish"] = False
+
+    for field, value in competition_values.items():
         setattr(competition, field, value)
 
     db.flush()
