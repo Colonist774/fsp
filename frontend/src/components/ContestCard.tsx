@@ -21,6 +21,18 @@ export default function ContestCard({ contest, status }: ContestCardProps) {
     navigate(`/contests/${contest.id}`);
   }
 
+  if (status === "draft") {
+    return (
+      <div className="contest-card">
+        <span className="contest-title">{contest.title}</span>
+        <span>Не опубликовано</span>
+        <button type="button" onClick={openCompetition}>
+          Настроить
+        </button>
+      </div>
+    );
+  }
+
   if (status === "active") {
     return (
       <div className="contest-card">
