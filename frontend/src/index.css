@@ -4298,3 +4298,120 @@ nav a[aria-current="page"]::after {
     justify-content: flex-end;
   }
 }
+
+.competition-start-notification-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 7, 10, 0.7);
+}
+
+.competition-start-notification {
+  width: min(100%, 500px);
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
+}
+
+.competition-start-notification-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #79b8ff;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.competition-start-notification h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.competition-start-notification p {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.competition-start-notification-error {
+  margin-top: 16px;
+  padding: 9px 10px;
+  border: 1px solid #5e2b2b;
+  border-radius: 6px;
+  background: #211315;
+  color: #ff9b96;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.competition-start-notification-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.competition-start-notification-actions button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.competition-start-notification-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.competition-start-notification-actions
+  .competition-start-notification-primary {
+  border-color: #2f6fce;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.competition-start-notification-actions
+  .competition-start-notification-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.competition-start-notification-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.competition-start-notification-count {
+  display: block;
+  margin-top: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+  font-size: 11px;
+}
+
+@media (max-width: 560px) {
+  .competition-start-notification {
+    padding: 20px;
+  }
+
+  .competition-start-notification-actions {
+    flex-direction: column-reverse;
+  }
+
+  .competition-start-notification-actions button {
+    width: 100%;
+  }
+}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import SolvePage from "./pages/SolvePage";
 import ContestsPage from "./pages/ContestsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
@@ -22,8 +22,23 @@ import PlatformSettingsPage from "./pages/PlatformSettingsPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
+type CompetitionStartNotification = {
+  competition_id: number;
+  title: string;
+  start_at: string;
+  end_at: string;
+};
+
 export default function App() {
+  const navigate = useNavigate();
   const [authState, setAuthState] = useState<AuthState>("loading");
+  const [startNotifications, setStartNotifications] = useState<
+    CompetitionStartNotification[]
+  >([]);
+  const [isDismissingNotification, setIsDismissingNotification] =
+    useState(false);
+  const [notificationError, setNotificationError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +89,106 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authState !== "authenticated") {
+      setStartNotifications([]);
+      setNotificationError(null);
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadStartNotifications() {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/notifications/competition-start",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok || cancelled) {
+          return;
+        }
+
+        const data: CompetitionStartNotification[] =
+          await response.json();
+
+        if (!cancelled) {
+          setStartNotifications(data);
+        }
+      } catch {
+        return;
+      }
+    }
+
+    loadStartNotifications();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authState]);
+
+  async function dismissStartNotification(
+    competitionId: number,
+    openCompetition: boolean,
+  ) {
+    const token = localStorage.getItem("token");
+
+    if (!token || isDismissingNotification) {
+      return;
+    }
+
+    setIsDismissingNotification(true);
+    setNotificationError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/notifications/competition-start/${competitionId}/seen`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        setNotificationError(
+          "Не удалось закрыть уведомление. Попробуйте ещё раз.",
+        );
+        return;
+      }
+
+      setStartNotifications((current) =>
+        current.filter(
+          (notification) =>
+            notification.competition_id !== competitionId,
+        ),
+      );
+
+      if (openCompetition) {
+        navigate(`/contests/${competitionId}`);
+      }
+    } catch {
+      setNotificationError(
+        "Не удалось закрыть уведомление. Попробуйте ещё раз.",
+      );
+    } finally {
+      setIsDismissingNotification(false);
+    }
+  }
+
+  const startNotification = startNotifications[0] ?? null;
+
   if (authState === "loading") {
     return null;
   }
@@ -96,7 +211,8 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <Routes>
       <Route path="/" element={<ContestsPage />} />
       <Route path="/solve" element={<SolvePage />} />
       <Route path="/rating" element={<RatingPage />} />
@@ -156,6 +272,77 @@ export default function App() {
       <Route path="/profile/edit" element={<EditProfilePage />} />
       <Route path="/profile/stats" element={<StatisticsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+
+      {startNotification && (
+        <div
+          className="competition-start-notification-layer"
+          role="presentation"
+        >
+          <section
+            className="competition-start-notification"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="competition-start-notification-title"
+          >
+            <span className="competition-start-notification-label">
+              Соревнование началось
+            </span>
+
+            <h2 id="competition-start-notification-title">
+              Турнир «{startNotification.title}», на который вы
+              зарегистрировались, открыт
+            </h2>
+
+            <p>
+              Вы можете начать решать задания.
+            </p>
+
+            {notificationError && (
+              <div className="competition-start-notification-error">
+                {notificationError}
+              </div>
+            )}
+
+            <div className="competition-start-notification-actions">
+              <button
+                type="button"
+                disabled={isDismissingNotification}
+                onClick={() =>
+                  dismissStartNotification(
+                    startNotification.competition_id,
+                    false,
+                  )
+                }
+              >
+                Закрыть
+              </button>
+
+              <button
+                className="competition-start-notification-primary"
+                type="button"
+                disabled={isDismissingNotification}
+                onClick={() =>
+                  dismissStartNotification(
+                    startNotification.competition_id,
+                    true,
+                  )
+                }
+              >
+                {isDismissingNotification
+                  ? "Открытие..."
+                  : "Перейти к турниру"}
+              </button>
+            </div>
+
+            {startNotifications.length > 1 && (
+              <span className="competition-start-notification-count">
+                Ещё уведомлений: {startNotifications.length - 1}
+              </span>
+            )}
+          </section>
+        </div>
+      )}
+    </>
   );
 }
