@@ -19,7 +19,7 @@ function getTeamLabel(entry: RankingEntry) {
   }
 
   if (entry.team_status === "looking") {
-    return "В поиске";
+    return "В поиске команды";
   }
 
   return "—";
