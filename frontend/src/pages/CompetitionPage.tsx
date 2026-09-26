@@ -472,6 +472,20 @@ export default function CompetitionPage() {
                   </button>
                 )}
 
+                {competition.conduct_mode === "platform" && (
+                  <button
+                    className="competition-edit"
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/organizer/competitions/${competition.id}/submissions`,
+                      )
+                    }
+                  >
+                    Решения
+                  </button>
+                )}
+
                 <button
                   className="competition-edit"
                   type="button"
