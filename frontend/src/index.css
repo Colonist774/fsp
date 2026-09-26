@@ -66,15 +66,20 @@ nav {
   z-index: 20;
 }
 
-nav strong {
-  display: inline-block;
+.nav-brand {
+  height: 64px;
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
   margin-right: 22px;
-  padding-left: 2px;
-  color: #f0f3f6;
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+}
+
+.nav-brand-logo {
+  display: block;
+  width: auto;
+  height: 36px;
+  max-width: 112px;
+  object-fit: contain;
 }
 
 nav a {
@@ -869,9 +874,13 @@ nav a[aria-current="page"]::after {
     padding: 0 10px;
   }
 
-  nav strong {
+  .nav-brand {
     margin-right: 10px;
-    padding-left: 2px;
+  }
+
+  .nav-brand-logo {
+    height: 32px;
+    max-width: 100px;
   }
 
   nav a {
