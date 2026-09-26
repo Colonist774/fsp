@@ -30,6 +30,8 @@ from app.models import (
     Submission,
     Task,
     TaskTest,
+    Team,
+    TeamMember,
     User,
 )
 from app.schemas import (
@@ -59,6 +61,11 @@ from app.schemas import (
     TaskOrganizerRead,
     TaskRead,
     TaskTestData,
+    TeamCreate,
+    TeamMemberAdd,
+    TeamMemberRead,
+    TeamRead,
+    TeamUpdate,
     TokenRead,
     UserLogin,
     UserMe,
@@ -788,6 +795,327 @@ def update_athlete_qualification(
     )
 
 
+def get_user_team_membership(
+    db: Session,
+    user_id: int,
+) -> TeamMember | None:
+    return db.scalar(
+        select(TeamMember).where(TeamMember.user_id == user_id)
+    )
+
+
+def build_team_read(
+    team: Team,
+    db: Session,
+) -> TeamRead:
+    rows = db.execute(
+        select(TeamMember, User)
+        .join(User, User.id == TeamMember.user_id)
+        .where(TeamMember.team_id == team.id)
+        .order_by(
+            (TeamMember.user_id != team.captain_user_id),
+            TeamMember.joined_at,
+            TeamMember.id,
+        )
+    ).all()
+
+    return TeamRead(
+        id=team.id,
+        name=team.name,
+        captain_user_id=team.captain_user_id,
+        members=[
+            TeamMemberRead(
+                user_id=user.id,
+                username=user.username,
+                full_name=user.full_name,
+                is_captain=user.id == team.captain_user_id,
+            )
+            for _, user in rows
+        ],
+    )
+
+
+def get_current_team(
+    current_user: User,
+    db: Session,
+) -> tuple[Team, TeamMember] | None:
+    membership = get_user_team_membership(db, current_user.id)
+
+    if membership is None:
+        return None
+
+    team = db.get(Team, membership.team_id)
+
+    if team is None:
+        return None
+
+    return team, membership
+
+
+def require_team_captain(
+    team_id: int,
+    current_user: User,
+    db: Session,
+) -> Team:
+    team = db.get(Team, team_id)
+
+    if team is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Команда не найдена",
+        )
+
+    if team.captain_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Это действие доступно только капитану команды",
+        )
+
+    return team
+
+
+@app.get("/api/me/team", response_model=TeamRead | None)
+def get_my_team(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = get_current_team(current_user, db)
+
+    if result is None:
+        return None
+
+    team, _ = result
+    return build_team_read(team, db)
+
+
+@app.post("/api/teams", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
+def create_team(
+    team_data: TeamCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Команды доступны участникам",
+        )
+
+    if get_user_team_membership(db, current_user.id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Вы уже состоите в команде",
+        )
+
+    name = team_data.name.strip()
+
+    if len(name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название команды слишком короткое",
+        )
+
+    existing = db.scalar(
+        select(Team).where(func.lower(Team.name) == name.lower())
+    )
+
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Команда с таким названием уже существует",
+        )
+
+    team = Team(name=name, captain_user_id=current_user.id)
+    db.add(team)
+    db.flush()
+    db.add(TeamMember(team_id=team.id, user_id=current_user.id))
+    current_user.team_status = "member"
+    current_user.team_name = name
+    db.commit()
+    db.refresh(team)
+
+    return build_team_read(team, db)
+
+
+@app.patch("/api/teams/{team_id}", response_model=TeamRead)
+def update_team(
+    team_id: int,
+    team_data: TeamUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    team = require_team_captain(team_id, current_user, db)
+    name = team_data.name.strip()
+
+    if len(name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название команды слишком короткое",
+        )
+
+    existing = db.scalar(
+        select(Team).where(
+            func.lower(Team.name) == name.lower(),
+            Team.id != team.id,
+        )
+    )
+
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Команда с таким названием уже существует",
+        )
+
+    team.name = name
+    member_ids = select(TeamMember.user_id).where(TeamMember.team_id == team.id)
+    db.execute(
+        update(User)
+        .where(User.id.in_(member_ids))
+        .values(team_status="member", team_name=name)
+    )
+    db.commit()
+    db.refresh(team)
+
+    return build_team_read(team, db)
+
+
+@app.post("/api/teams/{team_id}/members", response_model=TeamRead)
+def add_team_member(
+    team_id: int,
+    member_data: TeamMemberAdd,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    team = require_team_captain(team_id, current_user, db)
+    username = member_data.username.strip()
+    user = db.scalar(
+        select(User).where(func.lower(User.username) == username.lower())
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+    if user.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="В команду можно добавлять только участников",
+        )
+
+    if get_user_team_membership(db, user.id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь уже состоит в команде",
+        )
+
+    db.add(TeamMember(team_id=team.id, user_id=user.id))
+    user.team_status = "member"
+    user.team_name = team.name
+    db.commit()
+
+    return build_team_read(team, db)
+
+
+@app.delete("/api/teams/{team_id}/members/{user_id}", response_model=TeamRead)
+def remove_team_member(
+    team_id: int,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    team = require_team_captain(team_id, current_user, db)
+
+    if user_id == team.captain_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Капитан не может удалить себя",
+        )
+
+    membership = db.scalar(
+        select(TeamMember).where(
+            TeamMember.team_id == team.id,
+            TeamMember.user_id == user_id,
+        )
+    )
+
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Участник команды не найден",
+        )
+
+    user = db.get(User, user_id)
+    db.delete(membership)
+
+    if user is not None:
+        user.team_status = "solo"
+        user.team_name = None
+
+    db.commit()
+    return build_team_read(team, db)
+
+
+@app.post("/api/teams/{team_id}/captain/{user_id}", response_model=TeamRead)
+def transfer_team_captaincy(
+    team_id: int,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    team = require_team_captain(team_id, current_user, db)
+    membership = db.scalar(
+        select(TeamMember).where(
+            TeamMember.team_id == team.id,
+            TeamMember.user_id == user_id,
+        )
+    )
+
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Передать капитанство можно только участнику команды",
+        )
+
+    team.captain_user_id = user_id
+    db.commit()
+    db.refresh(team)
+    return build_team_read(team, db)
+
+
+@app.delete("/api/me/team", status_code=status.HTTP_204_NO_CONTENT)
+def leave_team(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = get_current_team(current_user, db)
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Вы не состоите в команде",
+        )
+
+    team, membership = result
+    members_count = db.scalar(
+        select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
+    ) or 0
+
+    if team.captain_user_id == current_user.id and members_count > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Сначала передайте капитанство другому участнику",
+        )
+
+    if team.captain_user_id == current_user.id:
+        db.delete(team)
+    else:
+        db.delete(membership)
+
+    current_user.team_status = "solo"
+    current_user.team_name = None
+    db.commit()
+
 @app.patch("/api/me/profile", response_model=UserMe)
 def update_profile(
     profile_data: UserProfileUpdate,
@@ -817,7 +1145,7 @@ def update_profile(
         if profile_data.sports_disciplines
         else None
     )
-    team_name = profile_data.team_name.strip() if profile_data.team_name else None
+    membership = get_user_team_membership(db, current_user.id)
 
     if len(username) < 3:
         raise HTTPException(
@@ -851,10 +1179,10 @@ def update_profile(
             detail="Пользователь с таким email уже существует",
         )
 
-    if profile_data.team_status == "member" and not team_name:
+    if membership is None and profile_data.team_status == "member":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Укажите название команды",
+            detail="Команда выбирается в разделе Команда",
         )
 
     current_user.username = username
@@ -866,10 +1194,13 @@ def update_profile(
     current_user.hide_locality = profile_data.hide_locality
     current_user.education_org = education_org
     current_user.sports_disciplines = sports_disciplines
-    current_user.team_status = profile_data.team_status
-    current_user.team_name = (
-        team_name if profile_data.team_status == "member" else None
-    )
+    if membership is None:
+        current_user.team_status = profile_data.team_status
+        current_user.team_name = None
+    else:
+        team = db.get(Team, membership.team_id)
+        current_user.team_status = "member"
+        current_user.team_name = team.name if team is not None else None
 
     db.commit()
     db.refresh(current_user)
