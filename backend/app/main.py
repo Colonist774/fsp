@@ -1143,6 +1143,9 @@ def get_competition_status(
 ) -> str:
     current_time = now or datetime.now(timezone.utc)
 
+    if competition.published_at is None:
+        return "draft"
+
     if current_time < competition.start_at:
         return "future"
 
@@ -1189,6 +1192,7 @@ def build_competition_read(
         id=competition.id,
         title=competition.title,
         description=competition.description,
+        rules=competition.rules,
         level=competition.level,
         discipline=competition.discipline,
         format=competition.format,
@@ -1206,6 +1210,7 @@ def build_competition_read(
         is_registered=is_registered,
         participation_finished=participation_finished,
         registered_count=registered_count,
+        published_at=competition.published_at,
         created_by_user_id=competition.created_by_user_id,
         created_at=competition.created_at,
     )
@@ -1235,9 +1240,14 @@ def get_competitions(
     finalize_finished_platform_competitions(db)
     cleanup_expired_competition_submissions(db)
 
-    competitions = db.scalars(
-        select(Competition).order_by(Competition.start_at)
-    ).all()
+    statement = select(Competition).order_by(Competition.start_at)
+
+    if current_user is None or current_user.role != "organizer":
+        statement = statement.where(
+            Competition.published_at.is_not(None)
+        )
+
+    competitions = db.scalars(statement).all()
 
     return [
         build_competition_read(competition, db, current_user)
@@ -1255,6 +1265,15 @@ def get_competition(
     competition = db.get(Competition, competition_id)
 
     if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if (
+        competition.published_at is None
+        and (current_user is None or current_user.role != "organizer")
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Соревнование не найдено",
@@ -1334,6 +1353,71 @@ def update_competition(
     db.refresh(competition)
 
     return build_competition_read(competition, db, current_user)
+
+
+@app.post(
+    "/api/competitions/{competition_id}/publish",
+    response_model=CompetitionRead,
+)
+def publish_competition(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.published_at is not None:
+        return build_competition_read(
+            competition,
+            db,
+            current_user,
+        )
+
+    validate_competition_data(
+        CompetitionCreate(
+            title=competition.title,
+            description=competition.description,
+            rules=competition.rules,
+            level=competition.level,
+            discipline=competition.discipline,
+            format=competition.format,
+            conduct_mode=competition.conduct_mode,
+            venue=competition.venue,
+            start_at=competition.start_at,
+            end_at=competition.end_at,
+            registration_deadline=competition.registration_deadline,
+            publish_tasks_after_finish=competition.publish_tasks_after_finish,
+        )
+    )
+
+    if competition.conduct_mode == "platform":
+        tasks_count = db.scalar(
+            select(func.count(CompetitionTask.id)).where(
+                CompetitionTask.competition_id == competition.id
+            )
+        ) or 0
+
+        if tasks_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Перед публикацией добавьте хотя бы одну задачу",
+            )
+
+    competition.published_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(competition)
+
+    return build_competition_read(
+        competition,
+        db,
+        current_user,
+    )
 
 
 def get_platform_competition_standings(
@@ -1533,6 +1617,7 @@ def finalize_finished_platform_competitions(
             select(Competition)
             .where(
                 Competition.conduct_mode == "platform",
+                Competition.published_at.is_not(None),
                 Competition.end_at <= now,
                 Competition.results_finalized_at.is_(None),
             )
@@ -2068,7 +2153,7 @@ def require_competition_task_access(
 
     competition_status = get_competition_status(competition)
 
-    if competition_status == "future":
+    if competition_status in ("draft", "future"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Задачи откроются после начала соревнования",
@@ -2317,6 +2402,12 @@ def create_competition_task(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Задачи можно добавлять только для соревнований на платформе",
+        )
+
+    if get_competition_status(competition) not in ("draft", "future"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="После начала соревнования новые задачи добавлять нельзя",
         )
 
     task = Task(
@@ -2601,7 +2692,7 @@ def delete_competition_task(
             detail="Соревнование не найдено",
         )
 
-    if get_competition_status(competition) != "future":
+    if get_competition_status(competition) not in ("draft", "future"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
