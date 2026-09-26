@@ -467,6 +467,16 @@ nav a[aria-current="page"]::after {
   background: #11151a;
 }
 
+.task-editor-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-file-input {
+  display: none;
+}
+
 .task-editor-actions select {
   height: 32px;
   min-width: 126px;
@@ -486,6 +496,27 @@ nav a[aria-current="page"]::after {
 
 .task-editor-actions select:focus {
   border-color: var(--accent);
+}
+
+.task-file-upload {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: #161b22;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.task-file-upload:hover:not(:disabled) {
+  background: #1b2129;
+}
+
+.task-file-upload:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .task-submit {
@@ -3163,6 +3194,15 @@ nav a[aria-current="page"]::after {
 }
 
 @media (max-width: 700px) {
+  .task-editor-file-actions {
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .task-file-upload {
+    padding: 0 9px;
+  }
+
   .task-editor-primary-actions {
     gap: 6px;
   }

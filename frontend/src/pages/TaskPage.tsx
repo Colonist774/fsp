@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { Task } from "../types/task";
 import type { Contest } from "../types/contest";
@@ -6,6 +11,15 @@ import Navbar from "../components/Navbar";
 import Editor from "@monaco-editor/react";
 
 type Language = "python" | "javascript" | "cpp" | "java";
+const languageByExtension: Record<string, Language> = {
+  ".py": "python",
+  ".js": "javascript",
+  ".cpp": "cpp",
+  ".cc": "cpp",
+  ".cxx": "cpp",
+  ".java": "java",
+};
+
 
 type SubmissionStatus =
   | "accepted"
@@ -71,6 +85,7 @@ const statusLabels: Record<SubmissionStatus, string> = {
 export default function TaskPage() {
   const { id, competitionId } = useParams();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [code, setCode] = useState("");
   const [task, setTask] = useState<Task | null>(null);
   const [competition, setCompetition] = useState<Contest | null>(null);
@@ -220,6 +235,54 @@ export default function TaskPage() {
   const participationUnavailable = Boolean(
     competition?.participation_finished || timeExpired,
   );
+
+  async function handleFileChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const dotIndex = file.name.lastIndexOf(".");
+    const extension =
+      dotIndex >= 0
+        ? file.name.slice(dotIndex).toLowerCase()
+        : "";
+    const fileLanguage = languageByExtension[extension];
+
+    if (!fileLanguage) {
+      setError(
+        "Поддерживаются файлы .py, .js, .cpp, .cc, .cxx и .java",
+      );
+      return;
+    }
+
+    try {
+      const fileCode = await file.text();
+
+      if (!fileCode.trim()) {
+        setError("Выбранный файл пуст");
+        return;
+      }
+
+      if (fileCode.length > MAX_CODE_LENGTH) {
+        setError(
+          "Исходный код должен быть не больше 100 000 символов",
+        );
+        return;
+      }
+
+      setLanguage(fileLanguage);
+      setCode(fileCode);
+      setSubmissionStatus(null);
+      setError(null);
+    } catch {
+      setError("Не удалось прочитать выбранный файл");
+    }
+  }
 
   async function handleSubmit() {
     if (!task) {
@@ -442,18 +505,38 @@ export default function TaskPage() {
 
         <section className="task-editor">
           <div className="task-editor-actions">
-            <select
-              value={language}
-              onChange={(event) =>
-                setLanguage(event.target.value as Language)
-              }
-              disabled={participationUnavailable}
-            >
-              <option value="python">Python</option>
-              <option value="javascript">JavaScript</option>
-              <option value="cpp">C++</option>
-              <option value="java">Java</option>
-            </select>
+            <div className="task-editor-file-actions">
+              <select
+                value={language}
+                onChange={(event) =>
+                  setLanguage(event.target.value as Language)
+                }
+                disabled={participationUnavailable}
+              >
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="cpp">C++</option>
+                <option value="java">Java</option>
+              </select>
+
+              <input
+                ref={fileInputRef}
+                className="task-file-input"
+                type="file"
+                accept=".py,.js,.cpp,.cc,.cxx,.java"
+                disabled={participationUnavailable}
+                onChange={handleFileChange}
+              />
+
+              <button
+                className="task-file-upload"
+                type="button"
+                disabled={participationUnavailable}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Загрузить файл
+              </button>
+            </div>
 
             <div className="task-editor-primary-actions">
               {competitionId &&
