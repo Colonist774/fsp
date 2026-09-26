@@ -15,6 +15,7 @@ import RatingPage from "./pages/RatingPage";
 import RatingInfoPage from "./pages/RatingInfoPage";
 import CompetitionPage from "./pages/CompetitionPage";
 import CompetitionFormPage from "./pages/CompetitionFormPage";
+import CompetitionSubmissionsPage from "./pages/CompetitionSubmissionsPage";
 import AthletePage from "./pages/AthletePage";
 import OrganizerAccessPage from "./pages/OrganizerAccessPage";
 
@@ -115,6 +116,10 @@ export default function App() {
       <Route
         path="/organizer/competitions/:id/edit"
         element={<CompetitionFormPage />}
+      />
+      <Route
+        path="/organizer/competitions/:id/submissions"
+        element={<CompetitionSubmissionsPage />}
       />
       <Route path="/announcements" element={<AnnouncementsPage />} />
       <Route path="/announcements/:id" element={<AnnouncementPage />} />
