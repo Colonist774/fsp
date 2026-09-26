@@ -468,6 +468,10 @@ export default function AthletePage() {
                     <Link
                       className="athlete-result-row"
                       to={`/contests/${result.competition_id}`}
+                      state={{
+                        backTo: `/athletes/${athlete.id}`,
+                        backLabel: "← К профилю",
+                      }}
                       key={result.competition_id}
                     >
                       <strong>{result.title}</strong>
