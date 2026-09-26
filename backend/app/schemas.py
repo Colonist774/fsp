@@ -41,6 +41,7 @@ class CompetitionBase(BaseModel):
     format: CompetitionFormat
     conduct_mode: CompetitionConductMode
     evaluation_mode: CompetitionEvaluationMode = "automatic"
+    execution_time_minutes: int | None = Field(default=None, ge=1)
     venue: str | None = Field(default=None, max_length=255)
     start_at: datetime
     end_at: datetime
@@ -58,6 +59,8 @@ class CompetitionRead(CompetitionBase):
     registration_open: bool
     is_registered: bool = False
     participation_finished: bool = False
+    participation_started_at: datetime | None = None
+    participation_deadline: datetime | None = None
     registered_count: int = 0
     published_at: datetime | None = None
     created_by_user_id: int | None

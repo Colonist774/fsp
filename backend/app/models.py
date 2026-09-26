@@ -97,6 +97,10 @@ class Competition(Base):
         server_default="automatic",
         nullable=False,
     )
+    execution_time_minutes: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
     venue: Mapped[str | None] = mapped_column(String(255), nullable=True)
     start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -152,6 +156,10 @@ class CompetitionRegistration(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
     finished_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
