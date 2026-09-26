@@ -82,6 +82,7 @@ export default function CompetitionPage() {
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
 
   async function loadCompetition() {
@@ -176,7 +177,8 @@ export default function CompetitionPage() {
     const participantCanSee =
       role === "participant" &&
       competition.is_registered &&
-      competition.status !== "future";
+      (competition.status === "active" ||
+        competition.status === "past");
 
     if (role !== "organizer" && !participantCanSee) {
       setTasks([]);
@@ -326,6 +328,46 @@ export default function CompetitionPage() {
     }
   }
 
+  async function publishCompetition() {
+    const token = localStorage.getItem("token");
+
+    if (!token || !competition || role !== "organizer") {
+      return;
+    }
+
+    setIsPublishing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${competition.id}/publish`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось опубликовать соревнование",
+        );
+        return;
+      }
+
+      setCompetition(data);
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
   async function saveResult(participant: CompetitionParticipant) {
     const token = localStorage.getItem("token");
 
@@ -383,11 +425,13 @@ export default function CompetitionPage() {
   }
 
   const statusLabel =
-    competition.status === "future"
-      ? "Предстоящее"
-      : competition.status === "active"
-        ? "Идёт сейчас"
-        : "Завершено";
+    competition.status === "draft"
+      ? "Черновик"
+      : competition.status === "future"
+        ? "Опубликовано"
+        : competition.status === "active"
+          ? "Идёт сейчас"
+          : "Завершено";
 
   return (
     <>
@@ -416,17 +460,30 @@ export default function CompetitionPage() {
 
           {role === "organizer" &&
             competition.status !== "past" && (
-              <button
-                className="competition-edit"
-                type="button"
-                onClick={() =>
-                  navigate(
-                    `/organizer/competitions/${competition.id}/edit`,
-                  )
-                }
-              >
-                Редактировать
-              </button>
+              <div className="competition-heading-actions">
+                {competition.status === "draft" && (
+                  <button
+                    className="competition-publish"
+                    type="button"
+                    disabled={isPublishing}
+                    onClick={publishCompetition}
+                  >
+                    {isPublishing ? "Публикация..." : "Опубликовать"}
+                  </button>
+                )}
+
+                <button
+                  className="competition-edit"
+                  type="button"
+                  onClick={() =>
+                    navigate(
+                      `/organizer/competitions/${competition.id}/edit`,
+                    )
+                  }
+                >
+                  Редактировать
+                </button>
+              </div>
             )}
         </div>
 
@@ -473,6 +530,13 @@ export default function CompetitionPage() {
           <h2>О соревновании</h2>
           <p>{competition.description}</p>
         </section>
+
+        {competition.rules && (
+          <section className="competition-description">
+            <h2>Правила</h2>
+            <p>{competition.rules}</p>
+          </section>
+        )}
 
         {error && <div className="competition-inline-error auth-error">{error}</div>}
 
@@ -533,18 +597,20 @@ export default function CompetitionPage() {
                   <span>{tasks.length}</span>
                 </div>
 
-                {role === "organizer" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/organizer/competitions/${competition.id}/tasks/new`,
-                      )
-                    }
-                  >
-                    + Добавить задачу
-                  </button>
-                )}
+                {role === "organizer" &&
+                  (competition.status === "draft" ||
+                    competition.status === "future") && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/organizer/competitions/${competition.id}/tasks/new`,
+                        )
+                      }
+                    >
+                      + Добавить задачу
+                    </button>
+                  )}
               </div>
 
               {tasks.length === 0 ? (
@@ -586,7 +652,8 @@ export default function CompetitionPage() {
                           >
                             Редактировать
                           </button>
-                          {competition.status === "future" && (
+                          {(competition.status === "draft" ||
+                            competition.status === "future") && (
                             <button
                               className="competition-task-delete"
                               type="button"
