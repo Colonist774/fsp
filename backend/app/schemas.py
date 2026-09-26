@@ -40,6 +40,8 @@ class SportDisciplineRead(BaseModel):
     id: int
     name: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class CompetitionBase(BaseModel):
     title: str = Field(min_length=3, max_length=200)

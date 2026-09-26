@@ -1317,6 +1317,12 @@ def create_sport_discipline(
 ):
     name = discipline_data.name.strip()
 
+    if len(name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название дисциплины слишком короткое",
+        )
+
     existing = db.scalar(
         select(SportDiscipline).where(
             func.lower(SportDiscipline.name) == name.lower()
@@ -1356,6 +1362,12 @@ def update_sport_discipline(
         )
 
     name = discipline_data.name.strip()
+
+    if len(name) < 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Название дисциплины слишком короткое",
+        )
 
     existing = db.scalar(
         select(SportDiscipline).where(
