@@ -156,6 +156,19 @@ export default function ContestsPage() {
                 key={contest.id}
                 contest={contest}
                 status={contest.status}
+                onPublished={(publishedContest) => {
+                  setContests((current) =>
+                    current.map((item) =>
+                      item.id === publishedContest.id
+                        ? publishedContest
+                        : item,
+                    ),
+                  );
+                  setError(null);
+                }}
+                onError={(message) =>
+                  setError(message || null)
+                }
               />
             ))}
           </div>
