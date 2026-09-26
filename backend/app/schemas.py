@@ -308,6 +308,7 @@ class AthleteResultRead(BaseModel):
 class AthleteProfileRead(BaseModel):
     id: int
     username: str
+    email: str | None = None
     full_name: str | None
     hide_full_name: bool
     locality: str | None
