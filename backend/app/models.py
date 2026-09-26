@@ -308,6 +308,18 @@ class Submission(Base):
         Integer,
         nullable=True,
     )
+    manual_score: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+    reviewed_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
