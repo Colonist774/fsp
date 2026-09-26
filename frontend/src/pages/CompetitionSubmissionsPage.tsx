@@ -28,6 +28,7 @@ const statusLabels: Record<string, string> = {
   compile_error: "Compile Error",
   pending: "В очереди",
   running: "Проверяется",
+  pending_review: "Ожидает ручной проверки",
 };
 
 const languageLabels = {
@@ -255,10 +256,16 @@ export default function CompetitionSubmissionsPage() {
 
               {submissions.map((submission) => {
                 const displayedScore =
-                  submission.manual_score ??
-                  (submission.status === "accepted"
-                    ? submission.max_points
-                    : null);
+                  competition?.evaluation_mode === "manual"
+                    ? submission.manual_score
+                    : competition?.evaluation_mode === "automatic"
+                      ? submission.status === "accepted"
+                        ? submission.max_points
+                        : null
+                      : submission.manual_score ??
+                        (submission.status === "accepted"
+                          ? submission.max_points
+                          : null);
 
                 return (
                   <button
@@ -323,6 +330,13 @@ export default function CompetitionSubmissionsPage() {
                   </code>
                 </pre>
 
+                {competition?.evaluation_mode === "automatic" ? (
+                  <p className="review-score-note">
+                    Оценка выставляется автоматически по результатам
+                    скрытых тестов. Ручное изменение баллов отключено.
+                  </p>
+                ) : (
+                  <>
                 <div className="review-score">
                   <label>
                     <span>Оценка организатора</span>
@@ -336,9 +350,11 @@ export default function CompetitionSubmissionsPage() {
                           setScore(event.target.value)
                         }
                         placeholder={
-                          selected.status === "accepted"
-                            ? String(selected.max_points)
-                            : "0"
+                          competition?.evaluation_mode === "manual"
+                            ? "0"
+                            : selected.status === "accepted"
+                              ? String(selected.max_points)
+                              : "0"
                         }
                       />
                       <span>из {selected.max_points}</span>
@@ -353,12 +369,13 @@ export default function CompetitionSubmissionsPage() {
                     {isSaving ? "Сохранение..." : "Сохранить оценку"}
                   </button>
                 </div>
-
-                <p className="review-score-note">
-                  Если ручная оценка не указана, Accepted получает
-                  полный балл автоматически. Для остальных решений
-                  учитывается 0 баллов.
-                </p>
+                    <p className="review-score-note">
+                      {competition?.evaluation_mode === "manual"
+                        ? "Баллы появятся в результате после оценки организатором."
+                        : "Если ручная оценка не указана, Accepted получает полный балл автоматически. Для остальных решений учитывается 0 баллов."}
+                    </p>
+                  </>
+                )}
               </section>
             )}
           </div>

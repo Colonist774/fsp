@@ -7,6 +7,7 @@ export type CompetitionLevel =
   | "regional";
 export type CompetitionFormat = "online" | "offline" | "hybrid";
 export type CompetitionConductMode = "platform" | "external";
+export type CompetitionEvaluationMode = "automatic" | "hybrid" | "manual";
 
 export type Contest = {
   readonly id: number;
@@ -17,6 +18,7 @@ export type Contest = {
   discipline: string;
   format: CompetitionFormat;
   conduct_mode: CompetitionConductMode;
+  evaluation_mode: CompetitionEvaluationMode;
   venue: string | null;
   start_at: string;
   end_at: string;

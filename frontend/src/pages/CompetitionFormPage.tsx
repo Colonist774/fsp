@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import type {
   CompetitionConductMode,
+  CompetitionEvaluationMode,
   CompetitionFormat,
   CompetitionLevel,
   Contest,
@@ -33,6 +34,8 @@ export default function CompetitionFormPage() {
     useState<CompetitionFormat>("online");
   const [conductMode, setConductMode] =
     useState<CompetitionConductMode>("platform");
+  const [evaluationMode, setEvaluationMode] =
+    useState<CompetitionEvaluationMode>("automatic");
   const [venue, setVenue] = useState("");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
@@ -106,6 +109,7 @@ export default function CompetitionFormPage() {
         setDiscipline(competition.discipline);
         setFormat(competition.format);
         setConductMode(competition.conduct_mode);
+        setEvaluationMode(competition.evaluation_mode);
         setVenue(competition.venue ?? "");
         setStartAt(toDateTimeLocal(competition.start_at));
         setEndAt(toDateTimeLocal(competition.end_at));
@@ -157,6 +161,8 @@ export default function CompetitionFormPage() {
             discipline: discipline.trim(),
             format,
             conduct_mode: conductMode,
+            evaluation_mode:
+              conductMode === "platform" ? evaluationMode : "automatic",
             venue:
               conductMode === "platform" && format === "online"
                 ? null
@@ -412,6 +418,35 @@ export default function CompetitionFormPage() {
 
             {conductMode === "platform" && (
               <>
+                <label>
+                  <span>Система оценки</span>
+                  <select
+                    value={evaluationMode}
+                    onChange={(event) =>
+                      setEvaluationMode(
+                        event.target.value as CompetitionEvaluationMode,
+                      )
+                    }
+                  >
+                    <option value="automatic">
+                      Автоматическая проверка
+                    </option>
+                    <option value="hybrid">
+                      Гибридная проверка
+                    </option>
+                    <option value="manual">
+                      Ручная проверка
+                    </option>
+                  </select>
+                </label>
+
+                <p className="competition-form-help">
+                  {evaluationMode === "automatic"
+                    ? "Решения проверяются системой по скрытым тестам."
+                    : evaluationMode === "hybrid"
+                      ? "Система проверяет решения автоматически, а организатор может изменить оценку вручную."
+                      : "Решения оценивает организатор. Скрытые тесты для задач не требуются."}
+                </p>
                 <label className="competition-form-checkbox">
                   <input
                     type="checkbox"

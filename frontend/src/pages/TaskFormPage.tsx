@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import type { CompetitionEvaluationMode } from "../types/contest";
 
 type TestCase = {
   input_data: string;
@@ -48,9 +49,9 @@ export default function TaskFormPage() {
   const [examples, setExamples] = useState<TestCase[]>([
     createEmptyCase(),
   ]);
-  const [tests, setTests] = useState<TestCase[]>([
-    createEmptyCase(),
-  ]);
+  const [tests, setTests] = useState<TestCase[]>([]);
+  const [evaluationMode, setEvaluationMode] =
+    useState<CompetitionEvaluationMode>("automatic");
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
@@ -88,9 +89,31 @@ export default function TaskFormPage() {
           return;
         }
 
+        const competitionResponse = await fetch(
+          `http://127.0.0.1:8000/api/competitions/${competitionId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!competitionResponse.ok) {
+          setError("Не удалось загрузить настройки соревнования");
+          return;
+        }
+
+        const competitionData: {
+          evaluation_mode: CompetitionEvaluationMode;
+        } = await competitionResponse.json();
+
+        setEvaluationMode(competitionData.evaluation_mode);
         setAllowed(true);
 
         if (!isEditing || !taskId) {
+          if (competitionData.evaluation_mode !== "manual") {
+            setTests([createEmptyCase()]);
+          }
           return;
         }
 
@@ -125,7 +148,9 @@ export default function TaskFormPage() {
         setTests(
           task.tests.length > 0
             ? task.tests
-            : [createEmptyCase()],
+            : competitionData.evaluation_mode === "manual"
+              ? []
+              : [createEmptyCase()],
         );
       } catch {
         setError("Не удалось подключиться к серверу");
@@ -173,7 +198,10 @@ export default function TaskFormPage() {
       return;
     }
 
-    if (tests.length < 1 || tests.length > 100) {
+    if (
+      evaluationMode !== "manual" &&
+      (tests.length < 1 || tests.length > 100)
+    ) {
       setError("Количество тестов должно быть от 1 до 100");
       return;
     }
@@ -447,6 +475,15 @@ export default function TaskFormPage() {
               </div>
             </section>
 
+            {evaluationMode === "manual" ? (
+              <section className="task-author-section">
+                <h2>Ручная проверка</h2>
+                <p>
+                  Решения этого соревнования оценивает организатор.
+                  Скрытые тесты для задачи не требуются.
+                </p>
+              </section>
+            ) : (
             <section className="task-author-section">
               <div className="task-author-section-heading">
                 <div>
@@ -527,6 +564,7 @@ export default function TaskFormPage() {
                 ))}
               </div>
             </section>
+            )}
 
             {error && <div className="auth-error">{error}</div>}
 
