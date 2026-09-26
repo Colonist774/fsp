@@ -23,6 +23,7 @@ export default function CompetitionFormPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [rules, setRules] = useState("");
   const [level, setLevel] =
     useState<CompetitionLevel>("regional");
   const [discipline, setDiscipline] = useState(
@@ -100,6 +101,7 @@ export default function CompetitionFormPage() {
 
         setTitle(competition.title);
         setDescription(competition.description);
+        setRules(competition.rules);
         setLevel(competition.level);
         setDiscipline(competition.discipline);
         setFormat(competition.format);
@@ -150,6 +152,7 @@ export default function CompetitionFormPage() {
           body: JSON.stringify({
             title: title.trim(),
             description: description.trim(),
+            rules: rules.trim(),
             level,
             discipline: discipline.trim(),
             format,
@@ -258,6 +261,19 @@ export default function CompetitionFormPage() {
                 rows={7}
                 maxLength={5000}
                 required
+              />
+            </label>
+
+            <label>
+              <span>Правила / инструкция</span>
+              <textarea
+                value={rules}
+                onChange={(event) =>
+                  setRules(event.target.value)
+                }
+                rows={6}
+                maxLength={10000}
+                placeholder="Порядок участия, ограничения, критерии оценки и другая важная информация"
               />
             </label>
 
