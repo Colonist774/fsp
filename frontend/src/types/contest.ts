@@ -19,6 +19,7 @@ export type Contest = {
   format: CompetitionFormat;
   conduct_mode: CompetitionConductMode;
   evaluation_mode: CompetitionEvaluationMode;
+  execution_time_minutes: number | null;
   venue: string | null;
   start_at: string;
   end_at: string;
@@ -28,6 +29,8 @@ export type Contest = {
   registration_open: boolean;
   is_registered: boolean;
   participation_finished: boolean;
+  participation_started_at: string | null;
+  participation_deadline: string | null;
   registered_count: number;
   published_at: string | null;
   created_by_user_id: number | null;

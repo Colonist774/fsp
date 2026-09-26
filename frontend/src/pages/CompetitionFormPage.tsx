@@ -17,6 +17,46 @@ function toDateTimeLocal(value: string) {
   return local.toISOString().slice(0, 16);
 }
 
+type ExecutionTimeUnit = "minutes" | "hours" | "days";
+
+function splitExecutionTime(totalMinutes: number | null) {
+  const minutes = totalMinutes ?? 180;
+
+  if (minutes % 1440 === 0) {
+    return {
+      value: String(minutes / 1440),
+      unit: "days" as ExecutionTimeUnit,
+    };
+  }
+
+  if (minutes % 60 === 0) {
+    return {
+      value: String(minutes / 60),
+      unit: "hours" as ExecutionTimeUnit,
+    };
+  }
+
+  return {
+    value: String(minutes),
+    unit: "minutes" as ExecutionTimeUnit,
+  };
+}
+
+function toExecutionTimeMinutes(
+  value: number,
+  unit: ExecutionTimeUnit,
+) {
+  if (unit === "days") {
+    return value * 1440;
+  }
+
+  if (unit === "hours") {
+    return value * 60;
+  }
+
+  return value;
+}
+
 export default function CompetitionFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,6 +76,9 @@ export default function CompetitionFormPage() {
     useState<CompetitionConductMode>("platform");
   const [evaluationMode, setEvaluationMode] =
     useState<CompetitionEvaluationMode>("automatic");
+  const [executionTimeValue, setExecutionTimeValue] = useState("3");
+  const [executionTimeUnit, setExecutionTimeUnit] =
+    useState<ExecutionTimeUnit>("hours");
   const [venue, setVenue] = useState("");
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
@@ -110,6 +153,11 @@ export default function CompetitionFormPage() {
         setFormat(competition.format);
         setConductMode(competition.conduct_mode);
         setEvaluationMode(competition.evaluation_mode);
+        const executionTime = splitExecutionTime(
+          competition.execution_time_minutes,
+        );
+        setExecutionTimeValue(executionTime.value);
+        setExecutionTimeUnit(executionTime.unit);
         setVenue(competition.venue ?? "");
         setStartAt(toDateTimeLocal(competition.start_at));
         setEndAt(toDateTimeLocal(competition.end_at));
@@ -163,6 +211,13 @@ export default function CompetitionFormPage() {
             conduct_mode: conductMode,
             evaluation_mode:
               conductMode === "platform" ? evaluationMode : "automatic",
+            execution_time_minutes:
+              conductMode === "platform"
+                ? toExecutionTimeMinutes(
+                    Number(executionTimeValue),
+                    executionTimeUnit,
+                  )
+                : null,
             venue:
               conductMode === "platform" && format === "online"
                 ? null
@@ -401,6 +456,36 @@ export default function CompetitionFormPage() {
                   required
                 />
               </label>
+
+              {conductMode === "platform" && (
+                <label className="competition-duration-field">
+                  <span>Время на выполнение</span>
+                  <div className="competition-duration-inputs">
+                    <input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={executionTimeValue}
+                      onChange={(event) =>
+                        setExecutionTimeValue(event.target.value)
+                      }
+                      required
+                    />
+                    <select
+                      value={executionTimeUnit}
+                      onChange={(event) =>
+                        setExecutionTimeUnit(
+                          event.target.value as ExecutionTimeUnit,
+                        )
+                      }
+                    >
+                      <option value="minutes">Минуты</option>
+                      <option value="hours">Часы</option>
+                      <option value="days">Дни</option>
+                    </select>
+                  </div>
+                </label>
+              )}
 
               {!(conductMode === "platform" && format === "online") && (
                 <label>

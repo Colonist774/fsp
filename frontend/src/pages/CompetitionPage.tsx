@@ -65,6 +65,24 @@ function formatDateTime(dateString: string) {
   }).format(new Date(dateString));
 }
 
+function formatExecutionTime(totalMinutes: number | null) {
+  if (totalMinutes === null) {
+    return "До окончания соревнования";
+  }
+
+  if (totalMinutes % 1440 === 0) {
+    const days = totalMinutes / 1440;
+    return `${days} дн.`;
+  }
+
+  if (totalMinutes % 60 === 0) {
+    const hours = totalMinutes / 60;
+    return `${hours} ч.`;
+  }
+
+  return `${totalMinutes} мин.`;
+}
+
 function getTeamLabel(participant: CompetitionParticipant) {
   if (participant.team_status === "member") {
     return participant.team_name || "—";
@@ -93,6 +111,7 @@ export default function CompetitionPage() {
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [savingUserId, setSavingUserId] = useState<number | null>(null);
 
@@ -286,6 +305,54 @@ export default function CompetitionPage() {
       setError("Не удалось подключиться к серверу");
     } finally {
       setIsRegistering(false);
+    }
+  }
+
+  async function startCompetition() {
+    const token = localStorage.getItem("token");
+
+    if (
+      !token ||
+      !competition ||
+      tasks.length === 0 ||
+      role !== "participant"
+    ) {
+      return;
+    }
+
+    setIsStarting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/competitions/${competition.id}/start`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Не удалось начать выполнение",
+        );
+        return;
+      }
+
+      setCompetition(data);
+      navigate(
+        `/contests/${competition.id}/tasks/${tasks[0].task_id}`,
+      );
+    } catch {
+      setError("Не удалось подключиться к серверу");
+    } finally {
+      setIsStarting(false);
     }
   }
 
@@ -550,6 +617,16 @@ export default function CompetitionPage() {
               {formatDateTime(competition.registration_deadline)}
             </strong>
           </div>
+          {competition.conduct_mode === "platform" && (
+            <div>
+              <span>Время на выполнение</span>
+              <strong>
+                {formatExecutionTime(
+                  competition.execution_time_minutes,
+                )}
+              </strong>
+            </div>
+          )}
           {competition.venue &&
             !(
               competition.conduct_mode === "platform" &&
@@ -606,15 +683,10 @@ export default function CompetitionPage() {
               disabled={
                 !competition.is_registered ||
                 competition.participation_finished ||
-                tasks.length === 0
+                tasks.length === 0 ||
+                isStarting
               }
-              onClick={() => {
-                if (tasks.length > 0) {
-                  navigate(
-                    `/contests/${competition.id}/tasks/${tasks[0].task_id}`,
-                  );
-                }
-              }}
+              onClick={startCompetition}
             >
               {!competition.is_registered
                 ? "Вы не зарегистрированы"
@@ -622,7 +694,11 @@ export default function CompetitionPage() {
                   ? "Участие завершено"
                   : tasks.length === 0
                     ? "Задачи пока не добавлены"
-                    : "Начать"}
+                    : isStarting
+                      ? "Запуск..."
+                      : competition.participation_started_at
+                        ? "Продолжить"
+                        : "Начать"}
             </button>
           )}
 

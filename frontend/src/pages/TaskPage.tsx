@@ -32,6 +32,20 @@ type CurrentUser = {
 };
 
 const MAX_CODE_LENGTH = 100_000;
+function formatCountdown(totalSeconds: number) {
+  const seconds = Math.max(0, totalSeconds);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const restSeconds = seconds % 60;
+
+  const clock = [hours, minutes, restSeconds]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
+
+  return days > 0 ? `${days} д ${clock}` : clock;
+}
+
 
 type SavedSubmission = {
   code: string;
@@ -70,6 +84,8 @@ export default function TaskPage() {
   const [isFinishConfirmOpen, setIsFinishConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [remainingSeconds, setRemainingSeconds] =
+    useState<number | null>(null);
 
   useEffect(() => {
     async function loadTask() {
@@ -166,8 +182,52 @@ export default function TaskPage() {
     loadTask();
   }, [id, competitionId]);
 
+  useEffect(() => {
+    if (
+      !competitionId ||
+      role !== "participant" ||
+      !competition?.participation_deadline
+    ) {
+      setRemainingSeconds(null);
+      return;
+    }
+
+    function updateTimer() {
+      const deadline = new Date(
+        competition.participation_deadline as string,
+      ).getTime();
+      const seconds = Math.max(
+        0,
+        Math.ceil((deadline - Date.now()) / 1000),
+      );
+      setRemainingSeconds(seconds);
+    }
+
+    updateTimer();
+    const timerId = window.setInterval(updateTimer, 1000);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [
+    competitionId,
+    role,
+    competition?.participation_deadline,
+  ]);
+
+  const timeExpired =
+    remainingSeconds !== null && remainingSeconds <= 0;
+  const participationUnavailable = Boolean(
+    participationUnavailable || timeExpired,
+  );
+
   async function handleSubmit() {
     if (!task) {
+      return;
+    }
+
+    if (timeExpired) {
+      setError("Время на выполнение задач истекло");
       return;
     }
 
@@ -387,7 +447,7 @@ export default function TaskPage() {
               onChange={(event) =>
                 setLanguage(event.target.value as Language)
               }
-              disabled={competition?.participation_finished}
+              disabled={participationUnavailable}
             >
               <option value="python">Python</option>
               <option value="javascript">JavaScript</option>
@@ -399,7 +459,7 @@ export default function TaskPage() {
               {competitionId &&
                 role === "participant" &&
                 competition?.status === "active" &&
-                !competition.participation_finished && (
+                !participationUnavailable && (
                   <button
                     className="task-finish"
                     type="button"
@@ -416,12 +476,14 @@ export default function TaskPage() {
                 disabled={
                   isSubmitting ||
                   !code.trim() ||
-                  competition?.participation_finished
+                  participationUnavailable
                 }
               >
-                {competition?.participation_finished
-                  ? "Участие завершено"
-                  : isSubmitting
+                {timeExpired
+                  ? "Время истекло"
+                  : participationUnavailable
+                    ? "Участие завершено"
+                    : isSubmitting
                     ? "Проверка..."
                     : "Отправить"}
               </button>
@@ -463,7 +525,7 @@ export default function TaskPage() {
               theme="fsp-dark"
               options={{
                 readOnly: Boolean(
-                  competition?.participation_finished,
+                  participationUnavailable,
                 ),
                 minimap: { enabled: false },
                 fontSize: 14,
@@ -503,10 +565,23 @@ export default function TaskPage() {
             className="submission-status"
             data-status={submissionStatus ?? undefined}
           >
-            Результат:{" "}
-            {submissionStatus
-              ? statusLabels[submissionStatus]
-              : ""}
+            <span>
+              Результат:{" "}
+              {submissionStatus
+                ? statusLabels[submissionStatus]
+                : ""}
+            </span>
+
+            {competitionId &&
+              role === "participant" &&
+              remainingSeconds !== null && (
+                <span
+                  className="submission-timer"
+                  data-expired={timeExpired || undefined}
+                >
+                  Время: {formatCountdown(remainingSeconds)}
+                </span>
+              )}
           </div>
         </section>
         {isFinishConfirmOpen && (

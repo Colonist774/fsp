@@ -514,6 +514,8 @@ nav a[aria-current="page"]::after {
   min-height: 44px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 0 16px;
   border-top: 1px solid var(--border);
   background: #11151a;
@@ -536,6 +538,18 @@ nav a[aria-current="page"]::after {
 .submission-status[data-status="time_limit_exceeded"],
 .submission-status[data-status="compilation_timeout"] {
   color: var(--warning);
+}
+
+.submission-timer {
+  margin-left: auto;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.submission-timer[data-expired="true"] {
+  color: var(--danger);
 }
 
 .code-editor-shell {
@@ -3074,6 +3088,12 @@ nav a[aria-current="page"]::after {
   }
 }
 
+
+.competition-duration-inputs {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(120px, 0.8fr);
+  gap: 8px;
+}
 
 .competition-form-help {
   margin: -8px 0 0;
