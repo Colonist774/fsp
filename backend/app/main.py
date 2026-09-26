@@ -38,6 +38,8 @@ from app.schemas import (
     CompetitionResultRead,
     CompetitionResultUpdate,
     CompetitionSubmissionDraftRead,
+    CompetitionSubmissionReviewRead,
+    CompetitionSubmissionScoreUpdate,
     CompetitionTaskRead,
     AthleteProfileRead,
     AthleteQualificationRead,
@@ -1463,10 +1465,14 @@ def get_platform_competition_standings(
     }
 
     if points_by_task:
-        accepted_rows = db.execute(
+        submission_rows = db.execute(
             select(
                 Submission.user_id,
                 Submission.task_id,
+                Submission.status,
+                Submission.judged_test_revision,
+                Submission.manual_score,
+                Task.test_revision,
             )
             .join(
                 Task,
@@ -1474,28 +1480,45 @@ def get_platform_competition_standings(
             )
             .where(
                 Submission.competition_id == competition_id,
-                Submission.status == "accepted",
-                Submission.judged_test_revision == Task.test_revision,
                 Submission.user_id.in_(user_ids),
                 Submission.task_id.in_(list(points_by_task)),
                 Submission.created_at <= competition.end_at,
             )
-            .distinct()
         ).all()
 
-        solved_by_user: dict[int, set[int]] = {}
+        best_score_by_user_task: dict[tuple[int, int], int] = {}
 
-        for user_id, task_id in accepted_rows:
+        for (
+            user_id,
+            task_id,
+            submission_status,
+            judged_revision,
+            manual_score,
+            current_revision,
+        ) in submission_rows:
             if user_id is None:
                 continue
 
-            solved_by_user.setdefault(user_id, set()).add(task_id)
+            max_points = points_by_task[task_id]
 
-        for user_id, solved_task_ids in solved_by_user.items():
-            scores[user_id] = sum(
-                points_by_task[task_id]
-                for task_id in solved_task_ids
+            if manual_score is not None:
+                candidate_score = min(manual_score, max_points)
+            elif (
+                submission_status == "accepted"
+                and judged_revision == current_revision
+            ):
+                candidate_score = max_points
+            else:
+                candidate_score = 0
+
+            key = (user_id, task_id)
+            best_score_by_user_task[key] = max(
+                best_score_by_user_task.get(key, 0),
+                candidate_score,
             )
+
+        for (user_id, _), task_score in best_score_by_user_task.items():
+            scores[user_id] += task_score
 
     ordered_scores = sorted(
         (score for score in scores.values() if score > 0),
@@ -1718,6 +1741,191 @@ def get_competition_participants(
         )
 
     return participants
+
+
+def build_competition_submission_review(
+    submission: Submission,
+    user: User,
+    task: Task,
+    link: CompetitionTask,
+) -> CompetitionSubmissionReviewRead:
+    return CompetitionSubmissionReviewRead(
+        id=submission.id,
+        user_id=user.id,
+        username=user.username,
+        full_name=user.full_name,
+        task_id=task.id,
+        task_title=task.title,
+        max_points=link.points,
+        code=submission.code,
+        language=submission.language,
+        status=submission.status,
+        manual_score=submission.manual_score,
+        created_at=submission.created_at,
+        reviewed_at=submission.reviewed_at,
+    )
+
+
+@app.get(
+    "/api/competitions/{competition_id}/submissions",
+    response_model=list[CompetitionSubmissionReviewRead],
+)
+def get_competition_submissions_for_review(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="У внешнего соревнования нет решений на платформе",
+        )
+
+    cleanup_expired_competition_submissions(db)
+
+    rows = db.execute(
+        select(
+            Submission,
+            User,
+            Task,
+            CompetitionTask,
+        )
+        .join(
+            User,
+            User.id == Submission.user_id,
+        )
+        .join(
+            Task,
+            Task.id == Submission.task_id,
+        )
+        .join(
+            CompetitionTask,
+            (CompetitionTask.competition_id == competition_id)
+            & (CompetitionTask.task_id == Submission.task_id),
+        )
+        .where(
+            Submission.competition_id == competition_id,
+            User.role == "participant",
+        )
+        .order_by(
+            Submission.created_at.desc(),
+            Submission.id.desc(),
+        )
+    ).all()
+
+    return [
+        build_competition_submission_review(
+            submission,
+            user,
+            task,
+            link,
+        )
+        for submission, user, task, link in rows
+    ]
+
+
+@app.put(
+    "/api/competitions/{competition_id}/submissions/{submission_id}/score",
+    response_model=CompetitionSubmissionReviewRead,
+)
+def score_competition_submission(
+    competition_id: int,
+    submission_id: int,
+    score_data: CompetitionSubmissionScoreUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="У внешнего соревнования нет решений на платформе",
+        )
+
+    submission = db.scalar(
+        select(Submission)
+        .where(
+            Submission.id == submission_id,
+            Submission.competition_id == competition_id,
+        )
+        .with_for_update()
+    )
+
+    if submission is None or submission.user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Решение не найдено",
+        )
+
+    user = db.get(User, submission.user_id)
+    task = db.get(Task, submission.task_id)
+    link = get_competition_task_link(
+        db,
+        competition_id,
+        submission.task_id,
+    )
+
+    if (
+        user is None
+        or user.role != "participant"
+        or task is None
+        or link is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Решение не найдено",
+        )
+
+    if (
+        score_data.score is not None
+        and score_data.score > link.points
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Максимум за задачу: {link.points}",
+        )
+
+    submission.manual_score = score_data.score
+    submission.reviewed_by_user_id = (
+        current_user.id if score_data.score is not None else None
+    )
+    submission.reviewed_at = (
+        datetime.now(timezone.utc)
+        if score_data.score is not None
+        else None
+    )
+
+    if get_competition_status(competition) == "past":
+        competition.results_finalized_at = None
+        sync_platform_competition_results(
+            db,
+            competition,
+        )
+
+    db.commit()
+    db.refresh(submission)
+
+    return build_competition_submission_review(
+        submission,
+        user,
+        task,
+        link,
+    )
 
 
 @app.get(
