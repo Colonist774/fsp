@@ -589,6 +589,14 @@ def get_athlete_profile(
     return AthleteProfileRead(
         id=athlete.id,
         username=athlete.username,
+        email=(
+            athlete.email
+            if (
+                current_user.role == "organizer"
+                or current_user.id == athlete.id
+            )
+            else None
+        ),
         full_name=athlete.full_name if full_name_visible else None,
         hide_full_name=athlete.hide_full_name,
         locality=athlete.locality if locality_visible else None,
