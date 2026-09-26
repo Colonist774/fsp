@@ -26,7 +26,7 @@ export default function Navbar() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/api/me",
+          "/api/me",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -76,7 +76,7 @@ export default function Navbar() {
 
   return (
     <nav>
-      <strong>ФСП</strong>
+      <NavLink to="/" className="nav-brand" aria-label="ФСП — главная">\n        <img\n          src="https://fsp-russia.ru/completed_pages/images/logo_big.svg"\n          alt="ФСП"\n          className="nav-brand-logo"\n        />\n      </NavLink>
 
       <NavLink to="/">Соревнования</NavLink>
       <NavLink to="/rating">Рейтинг</NavLink>
