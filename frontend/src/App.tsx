@@ -133,6 +133,10 @@ export default function App() {
       />
       <Route path="/tasks/:id" element={<TaskPage />} />
       <Route
+        path="/organizer/tasks/new"
+        element={<TaskFormPage />}
+      />
+      <Route
         path="/contests/:competitionId/tasks/:id"
         element={<TaskPage />}
       />

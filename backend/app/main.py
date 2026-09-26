@@ -3042,6 +3042,41 @@ def delete_competition_task(
     db.commit()
 
 
+@app.post(
+    "/api/tasks",
+    response_model=TaskRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_collection_task(
+    task_data: TaskOrganizerCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    if not task_data.tests:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Для задачи в сборнике нужен хотя бы один скрытый тест",
+        )
+
+    task = Task(
+        title=task_data.title.strip(),
+        difficulty=task_data.difficulty,
+        description=task_data.description.strip(),
+        input=task_data.input.strip(),
+        output=task_data.output.strip(),
+        constraints=task_data.constraints.strip(),
+    )
+    db.add(task)
+    db.flush()
+
+    replace_task_tests(db, task, task_data)
+
+    db.commit()
+    db.refresh(task)
+
+    return build_task_read(task, db)
+
+
 @app.get("/api/tasks", response_model=list[TaskRead])
 def get_tasks(
     db: Session = Depends(get_db),

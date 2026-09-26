@@ -38,6 +38,7 @@ export default function TaskFormPage() {
   const { competitionId, taskId } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(taskId);
+  const isCompetitionTask = Boolean(competitionId);
 
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState(1);
@@ -61,7 +62,7 @@ export default function TaskFormPage() {
     async function loadPage() {
       const token = localStorage.getItem("token");
 
-      if (!token || !competitionId) {
+      if (!token) {
         setAllowed(false);
         setIsLoading(false);
         return;
@@ -86,6 +87,13 @@ export default function TaskFormPage() {
 
         if (me.role !== "organizer") {
           setAllowed(false);
+          return;
+        }
+
+        if (!competitionId) {
+          setEvaluationMode("automatic");
+          setTests([createEmptyCase()]);
+          setAllowed(true);
           return;
         }
 
@@ -193,7 +201,7 @@ export default function TaskFormPage() {
 
     const token = localStorage.getItem("token");
 
-    if (!token || !competitionId) {
+    if (!token) {
       setError("Требуется авторизация");
       return;
     }
@@ -215,10 +223,14 @@ export default function TaskFormPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(
-        isEditing
+      const endpoint = competitionId
+        ? isEditing
           ? `http://127.0.0.1:8000/api/organizer/competitions/${competitionId}/tasks/${taskId}`
-          : `http://127.0.0.1:8000/api/organizer/competitions/${competitionId}/tasks`,
+          : `http://127.0.0.1:8000/api/organizer/competitions/${competitionId}/tasks`
+        : "http://127.0.0.1:8000/api/tasks";
+
+      const response = await fetch(
+        endpoint,
         {
           method: isEditing ? "PATCH" : "POST",
           headers: {
@@ -250,7 +262,7 @@ export default function TaskFormPage() {
         return;
       }
 
-      navigate(`/contests/${competitionId}`);
+      navigate(competitionId ? `/contests/${competitionId}` : "/solve");
     } catch {
       setError("Не удалось подключиться к серверу");
     } finally {
@@ -266,9 +278,11 @@ export default function TaskFormPage() {
           <button
             className="page-back"
             type="button"
-            onClick={() => navigate(`/contests/${competitionId}`)}
+            onClick={() =>
+              navigate(competitionId ? `/contests/${competitionId}` : "/solve")
+            }
           >
-            ← К соревнованию
+            {competitionId ? "← К соревнованию" : "← К задачам"}
           </button>
 
           <div className="auth-error">Недостаточно прав</div>
@@ -288,13 +302,17 @@ export default function TaskFormPage() {
               {isEditing ? "Редактировать задачу" : "Создать задачу"}
             </h1>
             <p>
-              Условие и тесты можно редактировать и после начала соревнования.
+              {isCompetitionTask
+                ? "Условие и тесты можно редактировать и после начала соревнования."
+                : "Создайте задачу для общего сборника. Она будет проверяться автоматически по скрытым тестам."}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => navigate(`/contests/${competitionId}`)}
+            onClick={() =>
+              navigate(competitionId ? `/contests/${competitionId}` : "/solve")
+            }
           >
             Назад
           </button>
@@ -332,19 +350,21 @@ export default function TaskFormPage() {
                 </select>
               </label>
 
-              <label className="task-author-difficulty">
-                <span>Баллы за решение</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={10000}
-                  value={points}
-                  required
-                  onChange={(event) =>
-                    setPoints(Number(event.target.value))
-                  }
-                />
-              </label>
+              {isCompetitionTask && (
+                <label className="task-author-difficulty">
+                  <span>Баллы за решение</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10000}
+                    value={points}
+                    required
+                    onChange={(event) =>
+                      setPoints(Number(event.target.value))
+                    }
+                  />
+                </label>
+              )}
 
               <label>
                 <span>Условие</span>
