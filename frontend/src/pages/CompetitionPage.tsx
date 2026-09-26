@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import Navbar from "../components/Navbar";
 import type { Contest } from "../types/contest";
 
@@ -75,6 +80,11 @@ function getTeamLabel(participant: CompetitionParticipant) {
 export default function CompetitionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigationState = location.state as {
+    backTo?: string;
+    backLabel?: string;
+  } | null;
   const [competition, setCompetition] = useState<Contest | null>(null);
   const [role, setRole] = useState<CurrentUser["role"]>("participant");
   const [participants, setParticipants] = useState<CompetitionParticipant[]>([]);
@@ -450,13 +460,14 @@ export default function CompetitionPage() {
           type="button"
           onClick={() =>
             navigate(
-              competition.status === "active"
-                ? "/"
-                : `/?tab=${competition.status}`,
+              navigationState?.backTo ??
+                (competition.status === "active"
+                  ? "/"
+                  : `/?tab=${competition.status}`),
             )
           }
         >
-          ← К соревнованиям
+          {navigationState?.backLabel ?? "← К соревнованиям"}
         </button>
 
         <div className="competition-heading">
