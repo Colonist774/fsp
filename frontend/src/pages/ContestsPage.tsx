@@ -15,7 +15,10 @@ export default function ContestsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const selectedTab: SidebarButtons =
-    tabParam === "future" || tabParam === "past" || tabParam === "active"
+    tabParam === "draft" ||
+    tabParam === "future" ||
+    tabParam === "past" ||
+    tabParam === "active"
       ? tabParam
       : "active";
   const [contests, setContests] = useState<Contest[]>([]);
@@ -84,11 +87,13 @@ export default function ContestsPage() {
   }
 
   const emptyText =
-    selectedTab === "active"
-      ? "Сейчас нет активных соревнований"
-      : selectedTab === "future"
-        ? "Пока нет будущих соревнований"
-        : "Пока нет завершённых соревнований";
+    selectedTab === "draft"
+      ? "Черновиков пока нет"
+      : selectedTab === "active"
+        ? "Сейчас нет активных соревнований"
+        : selectedTab === "future"
+          ? "Пока нет будущих соревнований"
+          : "Пока нет завершённых соревнований";
 
   return (
     <>
@@ -96,6 +101,15 @@ export default function ContestsPage() {
 
       <main className="page contests-layout">
         <aside className="contest-sidebar">
+          {role === "organizer" && (
+            <button
+              className={selectedTab === "draft" ? "is-active" : ""}
+              onClick={() => selectTab("draft")}
+            >
+              Черновики
+            </button>
+          )}
+
           <button
             className={selectedTab === "active" ? "is-active" : ""}
             onClick={() => selectTab("active")}
