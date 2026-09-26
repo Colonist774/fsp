@@ -4415,3 +4415,173 @@ nav a[aria-current="page"]::after {
     width: 100%;
   }
 }
+
+
+.review-participant-list {
+  display: grid;
+  align-content: start;
+}
+
+.review-participant-group {
+  border-bottom: 1px solid var(--border);
+}
+
+.review-participant-group:last-child {
+  border-bottom: 0;
+}
+
+.review-participant-row {
+  width: 100%;
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 24px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.review-participant-row:hover,
+.review-participant-row.is-expanded {
+  background: var(--surface-hover);
+}
+
+.review-participant-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.review-participant-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.review-participant-main small,
+.review-participant-count {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.review-participant-count {
+  white-space: nowrap;
+}
+
+.review-participant-chevron {
+  justify-self: end;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.review-participant-submissions {
+  border-top: 1px solid var(--border);
+  background: #0d1117;
+}
+
+.review-submission-header,
+.review-submission-row {
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 1fr)
+    120px
+    118px
+    82px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px 0 24px;
+}
+
+.review-submission-header {
+  min-height: 36px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.review-submission-row {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.review-submission-row:last-child {
+  border-bottom: 0;
+}
+
+.review-submission-row:hover,
+.review-submission-row.is-selected {
+  background: var(--surface-hover);
+}
+
+.review-submission-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-submission-row > span:nth-child(3) {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.review-submission-row > strong {
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-submission-row [data-status="accepted"] {
+  color: var(--success);
+}
+
+.review-submission-row [data-status="wrong_answer"],
+.review-submission-row [data-status="runtime_error"],
+.review-submission-row [data-status="compile_error"],
+.review-submission-row [data-status="time_limit_exceeded"],
+.review-submission-row [data-status="output_limit_exceeded"] {
+  color: var(--danger);
+}
+
+.review-detail-empty {
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.review-detail-empty > strong {
+  font-size: 14px;
+}
+
+.review-detail-empty > span {
+  max-width: 300px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .review-participant-submissions {
+    overflow-x: auto;
+  }
+
+  .review-submission-header,
+  .review-submission-row {
+    min-width: 590px;
+  }
+}

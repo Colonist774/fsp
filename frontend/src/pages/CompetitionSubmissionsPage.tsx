@@ -19,6 +19,13 @@ type ReviewSubmission = {
   reviewed_at: string | null;
 };
 
+type SubmissionGroup = {
+  user_id: number;
+  username: string;
+  full_name: string | null;
+  submissions: ReviewSubmission[];
+};
+
 const statusLabels: Record<string, string> = {
   accepted: "Accepted",
   wrong_answer: "Wrong Answer",
@@ -49,11 +56,23 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatShortDateTime(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export default function CompetitionSubmissionsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [competition, setCompetition] = useState<Contest | null>(null);
   const [submissions, setSubmissions] = useState<ReviewSubmission[]>([]);
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(
+    null,
+  );
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [score, setScore] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +85,28 @@ export default function CompetitionSubmissionsPage() {
       null,
     [submissions, selectedId],
   );
+
+  const groupedSubmissions = useMemo(() => {
+    const groups = new Map<number, SubmissionGroup>();
+
+    submissions.forEach((submission) => {
+      const existing = groups.get(submission.user_id);
+
+      if (existing) {
+        existing.submissions.push(submission);
+        return;
+      }
+
+      groups.set(submission.user_id, {
+        user_id: submission.user_id,
+        username: submission.username,
+        full_name: submission.full_name,
+        submissions: [submission],
+      });
+    });
+
+    return Array.from(groups.values());
+  }, [submissions]);
 
   useEffect(() => {
     async function loadPage() {
@@ -111,15 +152,9 @@ export default function CompetitionSubmissionsPage() {
 
         setCompetition(competitionData);
         setSubmissions(submissionsData);
-
-        if (submissionsData.length > 0) {
-          setSelectedId(submissionsData[0].id);
-          setScore(
-            submissionsData[0].manual_score === null
-              ? ""
-              : String(submissionsData[0].manual_score),
-          );
-        }
+        setExpandedUserId(null);
+        setSelectedId(null);
+        setScore("");
       } catch {
         setError("Не удалось подключиться к серверу");
       } finally {
@@ -138,6 +173,25 @@ export default function CompetitionSubmissionsPage() {
         : String(submission.manual_score),
     );
     setError(null);
+  }
+
+  function getDisplayedScore(submission: ReviewSubmission) {
+    if (competition?.evaluation_mode === "manual") {
+      return submission.manual_score;
+    }
+
+    if (competition?.evaluation_mode === "automatic") {
+      return submission.status === "accepted"
+        ? submission.max_points
+        : null;
+    }
+
+    return (
+      submission.manual_score ??
+      (submission.status === "accepted"
+        ? submission.max_points
+        : null)
+    );
   }
 
   async function saveScore() {
@@ -234,7 +288,9 @@ export default function CompetitionSubmissionsPage() {
             <h1>Решения</h1>
             {competition && <p>{competition.title}</p>}
           </div>
-          <span>{submissions.length}</span>
+          <span>
+            {submissions.length} решений · {groupedSubmissions.length} участников
+          </span>
         </div>
 
         {error && <div className="auth-error">{error}</div>}
@@ -247,62 +303,105 @@ export default function CompetitionSubmissionsPage() {
 
         {submissions.length > 0 && (
           <div className="review-layout">
-            <section className="review-list">
-              <div className="review-list-header">
-                <span>Участник</span>
-                <span>Задача</span>
-                <span>Вердикт</span>
-                <span>Баллы</span>
-              </div>
-
-              {submissions.map((submission) => {
-                const displayedScore =
-                  competition?.evaluation_mode === "manual"
-                    ? submission.manual_score
-                    : competition?.evaluation_mode === "automatic"
-                      ? submission.status === "accepted"
-                        ? submission.max_points
-                        : null
-                      : submission.manual_score ??
-                        (submission.status === "accepted"
-                          ? submission.max_points
-                          : null);
+            <section className="review-list review-participant-list">
+              {groupedSubmissions.map((group) => {
+                const isExpanded =
+                  expandedUserId === group.user_id;
 
                 return (
-                  <button
-                    className={
-                      submission.id === selectedId
-                        ? "review-row is-selected"
-                        : "review-row"
-                    }
-                    type="button"
-                    key={submission.id}
-                    onClick={() => selectSubmission(submission)}
+                  <div
+                    className="review-participant-group"
+                    key={group.user_id}
                   >
-                    <span>
-                      <strong>
-                        {submission.full_name || submission.username}
-                      </strong>
-                      {submission.full_name && (
-                        <small>@{submission.username}</small>
-                      )}
-                    </span>
-                    <span>{submission.task_title}</span>
-                    <span data-status={submission.status}>
-                      {statusLabels[submission.status] ??
-                        submission.status}
-                    </span>
-                    <strong>
-                      {displayedScore === null
-                        ? "—"
-                        : `${displayedScore}/${submission.max_points}`}
-                    </strong>
-                  </button>
+                    <button
+                      className={
+                        isExpanded
+                          ? "review-participant-row is-expanded"
+                          : "review-participant-row"
+                      }
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() =>
+                        setExpandedUserId((current) =>
+                          current === group.user_id
+                            ? null
+                            : group.user_id,
+                        )
+                      }
+                    >
+                      <span className="review-participant-main">
+                        <strong>
+                          {group.full_name || group.username}
+                        </strong>
+                        {group.full_name && (
+                          <small>@{group.username}</small>
+                        )}
+                      </span>
+
+                      <span className="review-participant-count">
+                        {group.submissions.length}{" "}
+                        {group.submissions.length === 1
+                          ? "решение"
+                          : "решений"}
+                      </span>
+
+                      <span className="review-participant-chevron">
+                        {isExpanded ? "⌃" : "⌄"}
+                      </span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="review-participant-submissions">
+                        <div className="review-submission-header">
+                          <span>Задача</span>
+                          <span>Вердикт</span>
+                          <span>Отправлено</span>
+                          <span>Баллы</span>
+                        </div>
+
+                        {group.submissions.map((submission) => {
+                          const displayedScore =
+                            getDisplayedScore(submission);
+
+                          return (
+                            <button
+                              className={
+                                submission.id === selectedId
+                                  ? "review-submission-row is-selected"
+                                  : "review-submission-row"
+                              }
+                              type="button"
+                              key={submission.id}
+                              onClick={() =>
+                                selectSubmission(submission)
+                              }
+                            >
+                              <span>{submission.task_title}</span>
+                              <span data-status={submission.status}>
+                                {statusLabels[submission.status] ??
+                                  submission.status}
+                              </span>
+                              <span>
+                                {formatShortDateTime(
+                                  submission.created_at,
+                                )}
+                              </span>
+                              <strong>
+                                {displayedScore === null
+                                  ? "—"
+                                  : `${displayedScore}/${submission.max_points}`}
+                              </strong>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </section>
 
-            {selected && (
+            {selected ? (
               <section className="review-detail">
                 <div className="review-detail-heading">
                   <div>
@@ -338,38 +437,41 @@ export default function CompetitionSubmissionsPage() {
                   </p>
                 ) : (
                   <>
-                <div className="review-score">
-                  <label>
-                    <span>Оценка организатора</span>
-                    <div>
-                      <input
-                        type="number"
-                        min={0}
-                        max={selected.max_points}
-                        value={score}
-                        onChange={(event) =>
-                          setScore(event.target.value)
-                        }
-                        placeholder={
-                          competition?.evaluation_mode === "manual"
-                            ? "0"
-                            : selected.status === "accepted"
-                              ? String(selected.max_points)
-                              : "0"
-                        }
-                      />
-                      <span>из {selected.max_points}</span>
-                    </div>
-                  </label>
+                    <div className="review-score">
+                      <label>
+                        <span>Оценка организатора</span>
+                        <div>
+                          <input
+                            type="number"
+                            min={0}
+                            max={selected.max_points}
+                            value={score}
+                            onChange={(event) =>
+                              setScore(event.target.value)
+                            }
+                            placeholder={
+                              competition?.evaluation_mode === "manual"
+                                ? "0"
+                                : selected.status === "accepted"
+                                  ? String(selected.max_points)
+                                  : "0"
+                            }
+                          />
+                          <span>из {selected.max_points}</span>
+                        </div>
+                      </label>
 
-                  <button
-                    type="button"
-                    disabled={isSaving}
-                    onClick={saveScore}
-                  >
-                    {isSaving ? "Сохранение..." : "Сохранить оценку"}
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        disabled={isSaving}
+                        onClick={saveScore}
+                      >
+                        {isSaving
+                          ? "Сохранение..."
+                          : "Сохранить оценку"}
+                      </button>
+                    </div>
+
                     <p className="review-score-note">
                       {competition?.evaluation_mode === "manual"
                         ? "Баллы появятся в результате после оценки организатором."
@@ -377,6 +479,14 @@ export default function CompetitionSubmissionsPage() {
                     </p>
                   </>
                 )}
+              </section>
+            ) : (
+              <section className="review-detail review-detail-empty">
+                <strong>Выберите решение</strong>
+                <span>
+                  Откройте участника слева и выберите одну из его
+                  отправок, чтобы посмотреть код и результат проверки.
+                </span>
               </section>
             )}
           </div>
