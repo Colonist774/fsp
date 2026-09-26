@@ -1165,6 +1165,25 @@ def get_competition_status(
     return "active"
 
 
+def get_participation_deadline(
+    competition: Competition,
+    registration: CompetitionRegistration | None,
+) -> datetime | None:
+    if registration is None or registration.started_at is None:
+        return None
+
+    deadline = competition.end_at
+
+    if competition.execution_time_minutes is not None:
+        personal_deadline = (
+            registration.started_at
+            + timedelta(minutes=competition.execution_time_minutes)
+        )
+        deadline = min(deadline, personal_deadline)
+
+    return deadline
+
+
 def build_competition_read(
     competition: Competition,
     db: Session,
@@ -1184,6 +1203,8 @@ def build_competition_read(
 
     is_registered = False
     participation_finished = False
+    participation_started_at = None
+    participation_deadline = None
 
     if current_user is not None:
         registration = db.scalar(
@@ -1193,9 +1214,22 @@ def build_competition_read(
             )
         )
         is_registered = registration is not None
+        participation_started_at = (
+            registration.started_at if registration is not None else None
+        )
+        participation_deadline = get_participation_deadline(
+            competition,
+            registration,
+        )
         participation_finished = (
             registration is not None
-            and registration.finished_at is not None
+            and (
+                registration.finished_at is not None
+                or (
+                    participation_deadline is not None
+                    and current_time >= participation_deadline
+                )
+            )
         )
 
     return CompetitionRead(
@@ -1208,6 +1242,7 @@ def build_competition_read(
         format=competition.format,
         conduct_mode=competition.conduct_mode,
         evaluation_mode=competition.evaluation_mode,
+        execution_time_minutes=competition.execution_time_minutes,
         venue=competition.venue,
         start_at=competition.start_at,
         end_at=competition.end_at,
@@ -1220,6 +1255,8 @@ def build_competition_read(
         ),
         is_registered=is_registered,
         participation_finished=participation_finished,
+        participation_started_at=participation_started_at,
+        participation_deadline=participation_deadline,
         registered_count=registered_count,
         published_at=competition.published_at,
         created_by_user_id=competition.created_by_user_id,
@@ -1240,6 +1277,15 @@ def validate_competition_data(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Регистрация должна завершиться не позже начала соревнования",
+        )
+
+    if (
+        competition_data.conduct_mode == "platform"
+        and competition_data.execution_time_minutes is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Укажите время на выполнение задач",
         )
 
 
@@ -1316,6 +1362,7 @@ def create_competition(
     if competition_data.conduct_mode == "external":
         competition_values["publish_tasks_after_finish"] = False
         competition_values["evaluation_mode"] = "automatic"
+        competition_values["execution_time_minutes"] = None
 
     if competition_values["evaluation_mode"] == "manual":
         competition_values["publish_tasks_after_finish"] = False
@@ -1372,6 +1419,7 @@ def update_competition(
     if competition_data.conduct_mode == "external":
         competition_values["publish_tasks_after_finish"] = False
         competition_values["evaluation_mode"] = "automatic"
+        competition_values["execution_time_minutes"] = None
 
     if competition_values["evaluation_mode"] == "manual":
         competition_values["publish_tasks_after_finish"] = False
@@ -1430,6 +1478,7 @@ def publish_competition(
             format=competition.format,
             conduct_mode=competition.conduct_mode,
             evaluation_mode=competition.evaluation_mode,
+            execution_time_minutes=competition.execution_time_minutes,
             venue=competition.venue,
             start_at=competition.start_at,
             end_at=competition.end_at,
@@ -2246,6 +2295,74 @@ def register_for_competition(
 
 
 @app.post(
+    "/api/competitions/{competition_id}/start",
+    response_model=CompetitionRead,
+)
+def start_competition_participation(
+    competition_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "participant":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Начать участие может только участник",
+        )
+
+    competition = db.get(Competition, competition_id)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Соревнование не найдено",
+        )
+
+    if competition.conduct_mode != "platform":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Это соревнование проводится вне платформы",
+        )
+
+    if get_competition_status(competition) != "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Начать участие можно только во время соревнования",
+        )
+
+    registration = db.scalar(
+        select(CompetitionRegistration)
+        .where(
+            CompetitionRegistration.competition_id == competition_id,
+            CompetitionRegistration.user_id == current_user.id,
+        )
+        .with_for_update()
+    )
+
+    if registration is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Вы не зарегистрированы на это соревнование",
+        )
+
+    if registration.finished_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Вы уже завершили участие в соревновании",
+        )
+
+    if registration.started_at is None:
+        registration.started_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(registration)
+
+    return build_competition_read(
+        competition,
+        db,
+        current_user,
+    )
+
+
+@app.post(
     "/api/competitions/{competition_id}/finish",
     response_model=CompetitionRead,
 )
@@ -2291,6 +2408,12 @@ def finish_competition_participation(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Вы не зарегистрированы на это соревнование",
+        )
+
+    if registration.started_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Сначала начните выполнение задач",
         )
 
     if registration.finished_at is None:
@@ -2440,6 +2563,8 @@ def require_competition_task_access(
     competition: Competition,
     current_user: User,
     db: Session,
+    *,
+    require_started: bool = False,
 ) -> None:
     if current_user.role == "organizer":
         return
@@ -2469,6 +2594,16 @@ def require_competition_task_access(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Задачи доступны только участникам соревнования",
+        )
+
+    if (
+        require_started
+        and competition_status == "active"
+        and registration.started_at is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Сначала нажмите «Начать» на странице соревнования",
         )
 
 
@@ -2595,6 +2730,7 @@ def get_competition_task(
         competition,
         current_user,
         db,
+        require_started=True,
     )
 
     if get_competition_task_link(db, competition_id, task_id) is None:
@@ -2644,6 +2780,7 @@ def get_latest_competition_submission(
         competition,
         current_user,
         db,
+        require_started=True,
     )
 
     if get_competition_task_link(db, competition_id, task_id) is None:
@@ -3170,6 +3307,7 @@ def create_submission(
                 competition,
                 current_user,
                 db,
+                require_started=True,
             )
 
             registration = db.scalar(
@@ -3186,6 +3324,20 @@ def create_submission(
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Вы уже завершили участие в соревновании",
+                )
+
+            participation_deadline = get_participation_deadline(
+                competition,
+                registration,
+            )
+
+            if (
+                participation_deadline is not None
+                and submitted_at >= participation_deadline
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Время на выполнение задач истекло",
                 )
 
         if get_competition_task_link(
