@@ -3946,3 +3946,147 @@ nav a[aria-current="page"]::after {
     flex-direction: column;
   }
 }
+.platform-settings-page {
+  width: min(100% - 48px, 860px);
+}
+
+.platform-settings-heading {
+  margin-bottom: 22px;
+}
+
+.platform-settings-heading h1 {
+  margin-bottom: 8px;
+}
+
+.platform-settings-heading p,
+.platform-settings-section-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.platform-settings-section {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.platform-settings-section-heading {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.platform-settings-section-heading h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.platform-discipline-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.platform-discipline-add input,
+.platform-discipline-row input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  outline: none;
+  background: #0d1117;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.platform-discipline-add input:focus,
+.platform-discipline-row input:focus {
+  border-color: var(--accent);
+}
+
+.platform-discipline-add button,
+.platform-discipline-actions button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: #161b22;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.platform-discipline-add button {
+  border-color: #2f6fce;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.platform-discipline-add button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.platform-discipline-actions button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.platform-discipline-add button:disabled,
+.platform-discipline-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.platform-discipline-row {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.platform-discipline-row:last-child {
+  border-bottom: 0;
+}
+
+.platform-discipline-row strong {
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.platform-discipline-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.platform-discipline-actions .platform-discipline-delete {
+  border-color: #5e2b2b;
+  color: #ff9b96;
+}
+
+.platform-discipline-actions .platform-discipline-delete:hover:not(:disabled) {
+  background: #211315;
+}
+
+@media (max-width: 700px) {
+  .platform-settings-page {
+    width: min(100% - 28px, 860px);
+  }
+
+  .platform-discipline-add,
+  .platform-discipline-row {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-discipline-actions {
+    justify-content: flex-end;
+  }
+}

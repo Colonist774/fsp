@@ -129,15 +129,27 @@ export default function Navbar() {
             </button>
 
             {role === "organizer" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  navigate("/organizer/access");
-                }}
-              >
-                Управление организаторами
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/organizer/platform-settings");
+                  }}
+                >
+                  Настройки платформы
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate("/organizer/access");
+                  }}
+                >
+                  Управление организаторами
+                </button>
+              </>
             )}
             <button
               type="button"

@@ -18,6 +18,7 @@ import CompetitionFormPage from "./pages/CompetitionFormPage";
 import CompetitionSubmissionsPage from "./pages/CompetitionSubmissionsPage";
 import AthletePage from "./pages/AthletePage";
 import OrganizerAccessPage from "./pages/OrganizerAccessPage";
+import PlatformSettingsPage from "./pages/PlatformSettingsPage";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
@@ -107,6 +108,10 @@ export default function App() {
       <Route
         path="/organizer/access"
         element={<OrganizerAccessPage />}
+      />
+      <Route
+        path="/organizer/platform-settings"
+        element={<PlatformSettingsPage />}
       />
       <Route path="/contests/:id" element={<CompetitionPage />} />
       <Route
