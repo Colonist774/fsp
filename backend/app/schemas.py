@@ -28,12 +28,13 @@ CompetitionLevel = Literal[
 ]
 CompetitionFormat = Literal["online", "offline", "hybrid"]
 CompetitionConductMode = Literal["platform", "external"]
-CompetitionStatus = Literal["future", "active", "past"]
+CompetitionStatus = Literal["draft", "future", "active", "past"]
 
 
 class CompetitionBase(BaseModel):
     title: str = Field(min_length=3, max_length=200)
     description: str = Field(min_length=1, max_length=5000)
+    rules: str = Field(default="", max_length=10000)
     level: CompetitionLevel
     discipline: str = Field(min_length=2, max_length=100)
     format: CompetitionFormat
@@ -56,6 +57,7 @@ class CompetitionRead(CompetitionBase):
     is_registered: bool = False
     participation_finished: bool = False
     registered_count: int = 0
+    published_at: datetime | None = None
     created_by_user_id: int | None
     created_at: datetime
 
