@@ -458,14 +458,18 @@ export default function CompetitionPage() {
         <button
           className="competition-back"
           type="button"
-          onClick={() =>
+          onClick={() => {
+            if (navigationState?.backTo) {
+              navigate(-1);
+              return;
+            }
+
             navigate(
-              navigationState?.backTo ??
-                (competition.status === "active"
-                  ? "/"
-                  : `/?tab=${competition.status}`),
-            )
-          }
+              competition.status === "active"
+                ? "/"
+                : `/?tab=${competition.status}`,
+            );
+          }}
         >
           {navigationState?.backLabel ?? "← К соревнованиям"}
         </button>
