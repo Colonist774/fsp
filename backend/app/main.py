@@ -1398,19 +1398,6 @@ def publish_competition(
         )
     )
 
-    if competition.conduct_mode == "platform":
-        tasks_count = db.scalar(
-            select(func.count(CompetitionTask.id)).where(
-                CompetitionTask.competition_id == competition.id
-            )
-        ) or 0
-
-        if tasks_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Перед публикацией добавьте хотя бы одну задачу",
-            )
-
     competition.published_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(competition)
