@@ -81,6 +81,7 @@ class CompetitionResultUpdate(BaseModel):
 class CompetitionResultRead(BaseModel):
     user_id: int
     username: str
+    full_name: str | None = None
     score: int | None = None
     place: int | None
     rating_points: int
