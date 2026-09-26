@@ -171,7 +171,28 @@ class SubmissionRead(BaseModel):
     code: str
     language: Language
     status: str
+    manual_score: int | None = None
     created_at: datetime
+
+
+class CompetitionSubmissionReviewRead(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    full_name: str | None = None
+    task_id: int
+    task_title: str
+    max_points: int
+    code: str
+    language: Language
+    status: str
+    manual_score: int | None = None
+    created_at: datetime
+    reviewed_at: datetime | None = None
+
+
+class CompetitionSubmissionScoreUpdate(BaseModel):
+    score: int | None = Field(default=None, ge=0)
 
 
 class UserRegister(BaseModel):
