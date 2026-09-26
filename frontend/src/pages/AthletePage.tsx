@@ -42,6 +42,7 @@ type AthleteResult = {
 type AthleteProfile = {
   id: number;
   username: string;
+  email: string | null;
   full_name: string | null;
   hide_full_name: boolean;
   locality: string | null;
@@ -353,6 +354,12 @@ export default function AthletePage() {
             </section>
 
             <section className="athlete-info">
+              {currentUser?.role === "organizer" && (
+                <div>
+                  <span>Email</span>
+                  <strong>{athlete.email || "Не указано"}</strong>
+                </div>
+              )}
               {canSeeLocality && (
                 <div>
                   <span>Населённый пункт</span>
