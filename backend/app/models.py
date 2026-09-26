@@ -80,6 +80,55 @@ class User(Base):
     )
 
 
+class Team(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    captain_user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+    __table_args__ = (
+        UniqueConstraint(
+            "team_id",
+            "user_id",
+            name="uq_team_members_team_user",
+        ),
+        UniqueConstraint("user_id", name="uq_team_members_user"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(
+        ForeignKey("teams.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
 class SportDiscipline(Base):
     __tablename__ = "sport_disciplines"
 
