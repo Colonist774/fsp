@@ -22,6 +22,7 @@ from app.database import get_db
 from app.judge import judge_submission
 from app.models import (
     Competition,
+    SportDiscipline,
     CompetitionRegistration,
     CompetitionResult,
     CompetitionTask,
@@ -33,6 +34,8 @@ from app.models import (
 )
 from app.schemas import (
     CompetitionCreate,
+    SportDisciplineCreate,
+    SportDisciplineRead,
     CompetitionParticipantRead,
     CompetitionRead,
     CompetitionResultRead,
@@ -1287,6 +1290,130 @@ def validate_competition_data(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Укажите время на выполнение задач",
         )
+
+
+@app.get(
+    "/api/disciplines",
+    response_model=list[SportDisciplineRead],
+)
+def get_sport_disciplines(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return db.scalars(
+        select(SportDiscipline).order_by(SportDiscipline.id)
+    ).all()
+
+
+@app.post(
+    "/api/platform/disciplines",
+    response_model=SportDisciplineRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_sport_discipline(
+    discipline_data: SportDisciplineCreate,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    name = discipline_data.name.strip()
+
+    existing = db.scalar(
+        select(SportDiscipline).where(
+            func.lower(SportDiscipline.name) == name.lower()
+        )
+    )
+
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Такая дисциплина уже существует",
+        )
+
+    discipline = SportDiscipline(name=name)
+    db.add(discipline)
+    db.commit()
+    db.refresh(discipline)
+
+    return discipline
+
+
+@app.patch(
+    "/api/platform/disciplines/{discipline_id}",
+    response_model=SportDisciplineRead,
+)
+def update_sport_discipline(
+    discipline_id: int,
+    discipline_data: SportDisciplineCreate,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    discipline = db.get(SportDiscipline, discipline_id)
+
+    if discipline is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Дисциплина не найдена",
+        )
+
+    name = discipline_data.name.strip()
+
+    existing = db.scalar(
+        select(SportDiscipline).where(
+            func.lower(SportDiscipline.name) == name.lower(),
+            SportDiscipline.id != discipline_id,
+        )
+    )
+
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Такая дисциплина уже существует",
+        )
+
+    old_name = discipline.name
+    discipline.name = name
+
+    db.execute(
+        update(Competition)
+        .where(Competition.discipline == old_name)
+        .values(discipline=name)
+    )
+    db.execute(
+        update(User)
+        .where(User.sports_disciplines == old_name)
+        .values(sports_disciplines=name)
+    )
+
+    db.commit()
+    db.refresh(discipline)
+
+    return discipline
+
+
+@app.delete(
+    "/api/platform/disciplines/{discipline_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_sport_discipline(
+    discipline_id: int,
+    current_user: User = Depends(require_organizer),
+    db: Session = Depends(get_db),
+):
+    discipline = db.get(SportDiscipline, discipline_id)
+
+    if discipline is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Дисциплина не найдена",
+        )
+
+    db.execute(
+        update(User)
+        .where(User.sports_disciplines == discipline.name)
+        .values(sports_disciplines=None)
+    )
+    db.delete(discipline)
+    db.commit()
 
 
 @app.get("/api/competitions", response_model=list[CompetitionRead])

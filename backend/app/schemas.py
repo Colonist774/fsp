@@ -32,6 +32,15 @@ CompetitionEvaluationMode = Literal["automatic", "hybrid", "manual"]
 CompetitionStatus = Literal["draft", "future", "active", "past"]
 
 
+class SportDisciplineCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+
+
+class SportDisciplineRead(BaseModel):
+    id: int
+    name: str
+
+
 class CompetitionBase(BaseModel):
     title: str = Field(min_length=3, max_length=200)
     description: str = Field(min_length=1, max_length=5000)
