@@ -106,7 +106,7 @@ export default function StatisticsPage() {
         {statistics && (
           <div className="statistics-content">
             <section className="statistics-section statistics-rating">
-              <h2>Рейтинг</h2>
+              <h2>Баллы</h2>
               <div className="statistics-rating-value">
                 {statistics.rating}
               </div>

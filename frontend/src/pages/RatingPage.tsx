@@ -130,7 +130,7 @@ export default function RatingPage() {
                   <span>Место</span>
                   <span>Участник</span>
                   <span>Команда</span>
-                  <span>Рейтинг</span>
+                  <span className="athlete-result-points-example">Баллы</span>
                 </div>
 
                 {rest.map((entry) => (

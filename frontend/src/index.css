@@ -1197,7 +1197,7 @@ nav a[aria-current="page"]::after {
 }
 
 .rating-table-row strong {
-  justify-self: end;
+  justify-self: center;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3316,6 +3316,10 @@ nav a[aria-current="page"]::after {
 
 .rating-page-heading h1 {
   margin-bottom: 0;
+}
+
+.rating-points {
+  align-self: center;
 }
 
 .rating-info-link {
