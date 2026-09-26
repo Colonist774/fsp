@@ -218,7 +218,7 @@ export default function TaskPage() {
   const timeExpired =
     remainingSeconds !== null && remainingSeconds <= 0;
   const participationUnavailable = Boolean(
-    participationUnavailable || timeExpired,
+    competition?.participation_finished || timeExpired,
   );
 
   async function handleSubmit() {

@@ -691,7 +691,11 @@ export default function CompetitionPage() {
               {!competition.is_registered
                 ? "Вы не зарегистрированы"
                 : competition.participation_finished
-                  ? "Участие завершено"
+                  ? competition.participation_deadline &&
+                    new Date(competition.participation_deadline).getTime() <=
+                      Date.now()
+                    ? "Время истекло"
+                    : "Участие завершено"
                   : tasks.length === 0
                     ? "Задачи пока не добавлены"
                     : isStarting
@@ -705,8 +709,9 @@ export default function CompetitionPage() {
         {competition.conduct_mode === "platform" &&
           (role === "organizer" ||
             (competition.is_registered &&
-              (competition.status === "active" ||
-                competition.status === "past"))) && (
+              (competition.status === "past" ||
+                (competition.status === "active" &&
+                  competition.participation_started_at !== null)))) && (
             <section className="competition-tasks-section">
               <div className="competition-section-heading competition-tasks-heading">
                 <div>
