@@ -589,7 +589,8 @@ export default function CompetitionPage() {
         {competition.conduct_mode === "platform" &&
           (role === "organizer" ||
             (competition.is_registered &&
-              competition.status !== "future")) && (
+              (competition.status === "active" ||
+                competition.status === "past"))) && (
             <section className="competition-tasks-section">
               <div className="competition-section-heading competition-tasks-heading">
                 <div>
